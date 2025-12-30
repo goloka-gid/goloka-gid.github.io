@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Медитации для детей</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #4a6fa5;
+        }
+        .theme-button {
+            display: inline-block;
+            margin: 10px;
+            padding: 12px 20px;
+            background-color: #e6f2ff;
+            border: 1px solid #b3d1ff;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .theme-button:hover {
+            background-color: #b3d1ff;
+        }
+        .player {
+            margin: 20px auto;
+            width: 90%;
+            max-width: 400px;
+        }
+        #audioPlayer {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Медитации для детей</h1>
+    <p>Выбери тему для медитации:</p>
+
+    <!-- Кнопки для выбора темы -->
+    <div class="theme-button" onclick="playMeditation('calmness', 'Спокойствие')">Спокойствие</div>
+    <div class="theme-button" onclick="playMeditation('magic', 'Волшебство')">Волшебство</div>
+    <div class="theme-button" onclick="playMeditation('sleep', 'Сон')">Сон</div>
+
+    <!-- Аудиоплеер -->
+    <div class="player">
+        <h3 id="currentTheme">Выберите тему</h3>
+        <audio id="audioPlayer" controls></audio>
+    </div>
+
+    <script>
+        // Замени ссылки на свои аудиофайлы
+        const meditations = {
+            'calmness': 'https://drive.google.com/uc?export=download&id=0B4aQq6oVAq3BWmFNOGIyY3RQSWZWZE5LTzRBWjh4WEVBbnRz',
+            'magic': 'https://drive.google.com/uc?export=download&id=0B4aQq6oVAq3BWmFNOGIyY3RQSWZWZE5LTzRBWjh4WEVBbnRz',
+            'sleep': 'https://drive.google.com/uc?export=download&id=0B4aQq6oVAq3BWmFNOGIyY3RQSWZWZE5LTzRBWjh4WEVBbnRz'
+        };
+
+        function playMeditation(theme, themeName) {
+            const audioPlayer = document.getElementById('audioPlayer');
+            const currentThemeElement = document.getElementById('currentTheme');
+
+            audioPlayer.src = meditations[theme];
+            currentThemeElement.textContent = themeName;
+            audioPlayer.play();
+        }
+    </script>
+</body>
+</html>
