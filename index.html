@@ -4,127 +4,167 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мир Элли</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Lora:ital,wght@0,400;1,500&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* (Стили оставляем те же, что и в прошлом сообщении для красоты) */
-        :root { --bg-gradient: linear-gradient(135deg, #fdfbf7 0%, #e8e3f5 100%); --accent: #9b87f5; --card-bg: rgba(255, 255, 255, 0.85); --text: #4a4a6a; --shadow: rgba(155, 135, 245, 0.2); }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-gradient); background-attachment: fixed; color: var(--text); margin: 0; padding: 20px; min-height: 100vh; -webkit-tap-highlight-color: transparent; }
-        .header { text-align: center; margin-bottom: 25px; }
+        :root {
+            --bg-gradient: linear-gradient(135deg, #fdfbf7 0%, #e8e3f5 100%);
+            --accent: #9b87f5;
+            --text-color: #4a4a6a;
+        }
+
+        body {
+            font-family: 'Comfortaa', cursive;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-color);
+            margin: 0; padding: 20px;
+            min-height: 100vh;
+        }
+
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 500px; margin: 0 auto; }
-        .day-card { background: var(--card-bg); backdrop-filter: blur(8px); border-radius: 20px; padding: 15px 5px; text-align: center; box-shadow: 0 6px 15px var(--shadow); transition: 0.3s; border: 1px solid rgba(255, 255, 255, 0.6); display: flex; flex-direction: column; align-items: center; }
-        .day-card:active { transform: scale(0.92); }
-        .day-num { font-size: 10px; color: #999; }
-        .day-icon { font-size: 24px; margin: 5px 0; }
-        .artifact-label { font-size: 11px; font-weight: 600; line-height: 1.2; }
-        #content-page { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-gradient); overflow-y: auto; z-index: 1000; padding: 20px; box-sizing: border-box; }
-        .section-box { background: white; border-radius: 20px; padding: 15px; margin-bottom: 15px; }
-        .section-title { font-weight: bold; color: var(--accent); margin-bottom: 10px; display: block; border-left: 4px solid var(--accent); padding-left: 10px; }
-        .tab-menu { display: flex; gap: 8px; margin-bottom: 10px; }
-        .tab-btn { flex: 1; padding: 8px; border: 1px solid var(--accent); background: none; border-radius: 10px; color: var(--accent); font-size: 13px; }
-        .tab-btn.active { background: var(--accent); color: white; }
-        .text-content { display: none; font-size: 14px; line-height: 1.6; white-space: pre-wrap; background: #fafafa; padding: 10px; border-radius: 10px; }
-        audio { width: 100%; margin-top: 5px; }
-        .back-btn { background: none; border: none; color: var(--accent); font-weight: bold; margin-bottom: 10px; }
+        
+        .day-card {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px; padding: 15px 5px; text-align: center;
+            box-shadow: 0 8px 20px rgba(155, 135, 245, 0.2);
+            border: 1px solid white; transition: 0.3s;
+        }
+
+        /* Стиль сказочной книги */
+        #content-page {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-gradient); z-index: 1000; overflow: hidden;
+        }
+
+        .scroll-container {
+            height: 100%; overflow-y: auto; scroll-behavior: smooth;
+            padding: 20px; padding-bottom: 200px;
+        }
+
+        /* Объемный текст истории */
+        .magic-text {
+            font-family: 'Lora', serif;
+            font-size: 19px;
+            line-height: 1.8;
+            color: #4a3b6d;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.8), 2px 2px 4px rgba(155, 135, 245, 0.15); /* Эффект объема */
+            white-space: pre-wrap;
+            margin-top: 40px;
+        }
+
+        .section-box {
+            background: rgba(255,255,255,0.6);
+            border-radius: 25px; padding: 20px; margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+
+        /* Кнопка магии */
+        .magic-scroll-btn {
+            background: white; border: none; padding: 10px 20px;
+            border-radius: 50px; color: var(--accent); font-weight: bold;
+            box-shadow: 0 4px 15px var(--accent); margin: 10px 0;
+            cursor: pointer; display: block; width: fit-content; margin-left: auto;
+        }
+
+        .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>✨ Путешествие Элли</h1>
-        <p>30 дней чудес и открытий</p>
+    <div id="main-view">
+        <h1 style="text-align: center; color: #7c67d6;">✨ Путешествие Элли</h1>
+        <div class="grid" id="main-grid"></div>
     </div>
 
-    <div class="grid" id="main-grid"></div>
-
     <div id="content-page">
-        <button class="back-btn" onclick="closeDay()">← Назад</button>
-        <h2 id="artifact-name-label" style="text-align: center; color: var(--accent);"></h2>
+        <div class="scroll-container" id="scroll-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button class="back-btn" onclick="closeDay()">🔙</button>
+                <button class="magic-scroll-btn" id="scroll-btn" onclick="toggleAutoScroll()">✨ Начать чтение</button>
+            </div>
+            
+            <h2 id="title-label" style="text-align: center; color: var(--accent);"></h2>
 
-        <div class="section-box">
-            <span class="section-title">📖 История Элли</span>
-            <div class="tab-menu"><button class="tab-btn active" onclick="setMode(this, 's-a', 's-t')">Слушать</button><button class="tab-btn" onclick="setMode(this, 's-t', 's-a')">Читать</button></div>
-            <audio id="s-a" controls></audio><div id="s-t" class="text-content">Загрузка...</div>
-        </div>
+            <div class="section-box">
+                <div id="story-display" class="magic-text"></div>
+            </div>
 
-        <div class="section-box">
-            <span class="section-title">🎵 Песенка</span>
-            <audio id="song-audio" controls></audio>
-        </div>
-
-        <div class="section-box">
-            <span class="section-title">🧸 Для детей</span>
-            <div class="tab-menu"><button class="tab-btn active" onclick="setMode(this, 'c-a', 'c-t')">Аудио</button><button class="tab-btn" onclick="setMode(this, 'c-t', 'c-a')">Текст</button></div>
-            <audio id="c-a" controls></audio><div id="c-t" class="text-content">Загрузка...</div>
-        </div>
-
-        <div class="section-box">
-            <span class="section-title">🧘 Для взрослых</span>
-            <div class="tab-menu"><button class="tab-btn active" onclick="setMode(this, 'a-a', 'a-t')">Аудио</button><button class="tab-btn" onclick="setMode(this, 'a-t', 'a-a')">Текст</button></div>
-            <audio id="a-a" controls></audio><div id="a-t" class="text-content">Загрузка...</div>
+            <div class="section-box">
+                <h3 style="color: var(--accent);">🎵 Слушать аудио</h3>
+                <audio id="audio-player" controls style="width: 100%;"></audio>
+            </div>
+            
+            <div class="section-box">
+                <h3 style="color: var(--accent);">🧘 Практика</h3>
+                <div id="practice-display" class="magic-text" style="font-size: 16px;"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Список артефактов и их иконок
         const items = [
             {n: "Волшебная Кисть", i: "🖌️"}, {n: "Зеркало Мечты", i: "🪞"}, {n: "Компас Намерений", i: "🧭"},
-            {n: "Сундук Благодарностей", i: "📦"}, {n: "Амулет Силы", i: "🧿"}, {n: "Волшебный Пояс", i: "🎗️"},
-            {n: "Щит Настойчивости", i: "🛡️"}, {n: "Мост Радости", i: "🌈"}, {n: "Ловец Мыслей", i: "🕸️"},
-            {n: "Волшебная Кнопка", i: "🔘"}, {n: "Рюкзак Поддержки", i: "🎒"}, {n: "Внутренний Сад", i: "🌳"},
-            {n: "Светофор Настроения", i: "🚥"}, {n: "Домик Спокойствия", i: "🏠"}, {n: "Волшебный Шаг", i: "👣"},
-            {n: "Волшебные Очки", i: "👓"}, {n: "Одеяло Заботы", i: "🛌"}, {n: "Внутренний Фонарик", i: "🔦"},
-            {n: "Волшебное Сердце", i: "💖"}, {n: "Лес Тишины", i: "🌲"}, {n: "Волна Радости", i: "🌊"},
-            {n: "Светлячок Заботы", i: "🪔"}, {n: "Волшебное Ухо", i: "👂"}, {n: "Река Принятия", i: "🚣"},
-            {n: "Лампочка Осознания", i: "💡"}, {n: "Крылья Мечты", i: "🪽"}, {n: "Кристалл Честности", i: "💎"},
-            {n: "Золотая Нить", i: "🧵"}, {n: "Звезда Надежды", i: "⭐"}, {n: "Волшебный Ключ", i: "🔑"}
+            {n: "Сундук Благодарностей", i: "📦"}, {n: "Амулет Силы", i: "🧿"}, {n: "Волшебный Пояс", i: "🎗️"}
         ];
 
+        let isScrolling = false;
+        let scrollInterval;
+
         const grid = document.getElementById('main-grid');
-        items.forEach((item, index) => {
+        items.forEach((item, i) => {
             const card = document.createElement('div');
             card.className = 'day-card';
-            card.innerHTML = `<div class="day-num">День ${index + 1}</div><div class="day-icon">${item.i}</div><div class="artifact-label">${item.n}</div>`;
-            card.onclick = () => openDay(index + 1, item.n);
+            card.innerHTML = `<div style="font-size:10px">ДЕНЬ ${i+1}</div><div style="font-size:30px">${item.i}</div><div style="font-size:12px; font-weight:bold">${item.n}</div>`;
+            card.onclick = () => openDay(i + 1, item.n);
             grid.appendChild(card);
         });
 
         async function openDay(num, name) {
-            document.getElementById('artifact-name-label').innerText = name;
+            document.getElementById('title-label').innerText = name;
+            document.getElementById('audio-player').src = `audio/day${num}_story.mp3`;
             
-            // Подключаем аудио
-            document.getElementById('s-a').src = `audio/day${num}_story.mp3`;
-            document.getElementById('song-audio').src = `audio/day${num}_song.mp3`;
-            document.getElementById('c-a').src = `audio/day${num}_child.mp3`;
-            document.getElementById('a-a').src = `audio/day${num}_adult.mp3`;
-
-            // Загружаем тексты из внешнего файла JSON
             try {
                 const res = await fetch(`texts/day${num}.json`);
                 const data = await res.json();
-                document.getElementById('s-t').innerText = data.story;
-                document.getElementById('c-t').innerText = data.child;
-                document.getElementById('a-t').innerText = data.adult;
+                document.getElementById('story-display').innerText = data.story;
+                // По умолчанию показываем детскую практику, если нужно (или обе)
+                document.getElementById('practice-display').innerText = data.child + "\n\n" + data.adult;
             } catch (e) {
-                document.querySelectorAll('.text-content').forEach(el => el.innerText = "Текст скоро будет добавлен...");
+                document.getElementById('story-display').innerText = "История скоро появится...";
             }
 
             document.getElementById('content-page').style.display = 'block';
+            document.getElementById('main-view').style.display = 'none';
+        }
+
+        function toggleAutoScroll() {
+            const container = document.getElementById('scroll-box');
+            const btn = document.getElementById('scroll-btn');
+            
+            if (isScrolling) {
+                clearInterval(scrollInterval);
+                btn.innerText = "✨ Продолжить чтение";
+            } else {
+                scrollInterval = setInterval(() => {
+                    container.scrollTop += 1; // Скорость прокрутки
+                    if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
+                        clearInterval(scrollInterval);
+                    }
+                }, 50); // Плавность (чем меньше число, тем быстрее)
+                btn.innerText = "⏸ Пауза";
+            }
+            isScrolling = !isScrolling;
         }
 
         function closeDay() {
-            document.querySelectorAll('audio').forEach(a => { a.pause(); a.src = ""; });
+            clearInterval(scrollInterval);
+            isScrolling = false;
+            document.getElementById('audio-player').pause();
             document.getElementById('content-page').style.display = 'none';
+            document.getElementById('main-view').style.display = 'block';
         }
-
-        function setMode(btn, showId, hideId) {
-            btn.parentNode.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById(showId).style.display = 'block';
-            document.getElementById(hideId).style.display = 'none';
-        }
-
-        const tg = window.Telegram.WebApp;
-        tg.ready(); tg.expand();
     </script>
 </body>
 </html>
