@@ -7,41 +7,172 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: #fdfbf7;
+            /* Нежная палитра: утренняя лаванда и жемчуг */
+            --bg-gradient: linear-gradient(135deg, #fdfbf7 0%, #e8e3f5 100%);
             --accent: #9b87f5;
-            --text: #4a4a4a;
-            --card: #ffffff;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text: #4a4a6a;
+            --shadow: rgba(155, 135, 245, 0.2);
         }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
-        .day-card { background: var(--card); padding: 15px 5px; border-radius: 15px; text-align: center; box-shadow: 0 4px 10px rgba(155, 135, 245, 0.1); cursor: pointer; transition: 0.2s; border: 1px solid #eee; }
-        .day-card:active { transform: scale(0.95); }
-        
-        #content-page { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); overflow-y: auto; z-index: 100; padding: 20px; box-sizing: border-box; }
-        .section-box { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 20px; border: 1px solid #f0f0f0; }
-        .section-title { font-weight: bold; color: var(--accent); margin-bottom: 12px; display: block; font-size: 18px; }
-        
-        .tab-menu { display: flex; gap: 8px; margin-bottom: 12px; }
-        .tab-btn { flex: 1; padding: 8px; border: 1px solid var(--accent); background: none; border-radius: 10px; cursor: pointer; color: var(--accent); font-weight: 500; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Заголовок */
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .header h1 {
+            color: #7c67d6;
+            margin: 0;
+            font-size: 26px;
+            text-shadow: 1px 1px 2px white;
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        /* Сетка дней */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 500px;
+            margin: 0 auto 40px auto;
+        }
+
+        /* Карточка дня */
+        .day-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 22px;
+            padding: 15px 5px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 6px 15px var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .day-card:active {
+            transform: scale(0.92);
+            background: white;
+        }
+        .day-num {
+            font-size: 10px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .day-icon {
+            font-size: 24px;
+            margin: 6px 0;
+            filter: drop-shadow(0 2px 4px var(--shadow));
+        }
+        .artifact-label {
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.2;
+            color: var(--text);
+            padding: 0 5px;
+        }
+
+        /* Экран контента */
+        #content-page {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-gradient);
+            overflow-y: auto;
+            z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-box {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .section-title {
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 15px;
+            display: block;
+            font-size: 18px;
+            border-left: 4px solid var(--accent);
+            padding-left: 10px;
+        }
+
+        /* Табы Аудио/Текст */
+        .tab-menu { display: flex; gap: 8px; margin-bottom: 15px; }
+        .tab-btn {
+            flex: 1; padding: 10px;
+            border: 1.5px solid var(--accent);
+            background: none; border-radius: 12px;
+            color: var(--accent); font-weight: 600;
+            transition: 0.2s;
+        }
         .tab-btn.active { background: var(--accent); color: white; }
-        
-        .text-content { display: none; font-size: 15px; line-height: 1.6; color: #555; margin-top: 12px; white-space: pre-wrap; border-top: 1px solid #eee; padding-top: 10px; }
-        audio { width: 100%; margin-top: 10px; border-radius: 10px; }
-        .back-btn { background: none; border: none; color: var(--accent); font-size: 16px; margin-bottom: 15px; font-weight: bold; }
-        h1, h2, h3 { text-align: center; }
+
+        .text-content {
+            display: none;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #555;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        audio { width: 100%; border-radius: 10px; }
+
+        /* Декор */
+        body::before { content: "🌸"; position: fixed; top: 10px; right: 10px; font-size: 30px; opacity: 0.15; pointer-events: none; }
+        body::after { content: "🌿"; position: fixed; bottom: 10px; left: 10px; font-size: 30px; opacity: 0.15; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <h2 style="color: var(--accent); margin-bottom: 5px;">✨ Путешествие Элли</h2>
-    <p style="text-align:center; font-size: 14px; margin-top:0;">30 дней медитаций-игр</p>
-    
+    <div class="header">
+        <h1>✨ Путешествие Элли</h1>
+        <p>Какое чудо ждет нас сегодня?</p>
+    </div>
+
     <div class="grid" id="main-grid"></div>
 
     <div id="content-page">
-        <button class="back-btn" onclick="closeDay()">← Карта приключений</button>
-        <h3 id="day-number-label" style="margin:0; font-size: 14px; color: #888;"></h3>
-        <h2 id="artifact-name-label" style="margin-top:5px; color: var(--accent);"></h2>
+        <button class="back-btn" onclick="closeDay()">← Назад</button>
+        <h3 id="day-number-label" style="margin:0; font-size: 14px; color: #888; text-align: center;"></h3>
+        <h2 id="artifact-name-label" style="margin-top:5px; color: var(--accent); text-align: center; margin-bottom: 25px;"></h2>
 
         <div class="section-box">
             <span class="section-title">📖 История Элли</span>
@@ -65,7 +196,7 @@
                 <button class="tab-btn" onclick="setMode(this, 'child-text', 'child-audio')">Текст</button>
             </div>
             <audio id="child-audio" controls></audio>
-            <div id="child-text" class="text-content">Текст медитации для детей скоро появится...</div>
+            <div id="child-text" class="text-content"></div>
         </div>
 
         <div class="section-box">
@@ -75,19 +206,18 @@
                 <button class="tab-btn" onclick="setMode(this, 'adult-text', 'adult-audio')">Текст</button>
             </div>
             <audio id="adult-audio" controls></audio>
-            <div id="adult-text" class="text-content">Текст медитации для взрослых скоро появится...</div>
+            <div id="adult-text" class="text-content"></div>
         </div>
     </div>
 
     <script>
         const artifacts = ["Волшебная Кисть", "Зеркало Мечты", "Компас Намерений", "Сундук Благодарностей", "Амулет Силы", "Волшебный Пояс", "Щит Настойчивости", "Мост Радости", "Ловец Мыслей", "Волшебная Кнопка", "Рюкзак Поддержки", "Внутренний Сад", "Светофор Настроения", "Домик Спокойствия", "Волшебный Шаг", "Волшебные Очки", "Одеяло Заботы", "Внутренний Фонарик", "Волшебное Сердце", "Лес Тишины", "Волна Радости", "Светлячок Заботы", "Волшебное Ухо", "Река Принятия", "Лампочка Осознания", "Крылья Мечты", "Кристалл Честности", "Золотая Нить", "Звезда Надежды", "Волшебный Ключ"];
 
-        // ТЕКСТЫ ДЛЯ ДНЯ 1
         const dayTexts = {
             1: {
-                story: `🌟 Путешествие к себе: Игра-Медитация на 30 дней\n\n✨ Элли и Волшебная Кисть ✨\n\nВ краю, где звёзды падают в ладони, а деревья умеют танцевать при лунном свете...\n\nВ далёком-далёком уголке волшебного леса, где облака нашёптывали древние сказания, жила-была маленькая девочка по имени Элли. Волосы у неё были цвета осенних листьев, а глаза — большие и ясные, как два озёрышка.\n\nОднажды Элли приснился удивительный сон о сокровище. Проснувшись, она нашла на подушке необыкновенную кисточку. Она была невесомой, а внутри неё пульсировал тёплый золотистый свет.\n\n— Это твоя Волшебная Кисть Сердца, — прошептал ветерок. — Всё, что ты нарисуешь ею внутри себя — в своём воображении — непременно оживёт для тебя.\n\nЭлли взмахнула кистью, и в воздухе возникла сияющая радуга! А потом — доброе солнышко и золотая дорожка из звёзд. С тех пор Кисть всегда с ней. И когда ей грустно или страшно, она рисует внутри своего сердца мир, где поют птицы радости и светит солнце веры.\n\nПомни: главное волшебство всегда живёт внутри нас самих...`,
-                child: "Текст детской медитации про Волшебную Кисть...",
-                adult: "Текст взрослой медитации про визуализацию..."
+                story: `✨ Элли и Волшебная Кисть ✨\n\nВ далёком уголке волшебного леса жила девочка Элли. Однажды ей приснился сон о сокровище, а проснувшись, она нашла Волшебную Кисть Сердца. \n\n— Всё, что ты нарисуешь ею внутри себя — непременно оживёт для тебя, — прошептал ветерок. \n\nЭлли взмахнула кистью, и в воздухе возникла сияющая радуга! С тех пор, когда ей грустно или страшно, она достаёт свою невидимую Кисть и рисует мир, полный надежды и радости.`,
+                child: "Представь, что в твоих руках — Волшебная Кисть. Какого она цвета? Давай нарисуем в воздухе большое доброе солнце...",
+                adult: "Закройте глаза. Почувствуйте, как в вашей руке рождается инструмент созидания. Визуализируйте пространство вашего внутреннего покоя..."
             }
         };
 
@@ -95,32 +225,44 @@
         artifacts.forEach((name, i) => {
             const card = document.createElement('div');
             card.className = 'day-card';
-            card.innerHTML = `<div style="font-size:10px; color:#aaa;">ДЕНЬ ${i+1}</div><div style="font-size:22px; margin:5px 0;">✨</div><div style="font-size:11px; font-weight:bold; color:#777;">${name}</div>`;
+            card.innerHTML = `
+                <div class="day-num">День ${i+1}</div>
+                <div class="day-icon">✨</div>
+                <div class="artifact-label">${name}</div>
+            `;
             card.onclick = () => openDay(i+1, name);
             grid.appendChild(card);
         });
 
         function openDay(num, name) {
-            document.getElementById('day-number-label').innerText = `ДЕНЬ ${num}`;
+            document.getElementById('day-number-label').innerText = `ПРИКЛЮЧЕНИЕ ${num}`;
             document.getElementById('artifact-name-label').innerText = name;
             
-            // Настройка аудио
+            // Сбрасываем вкладки на "Аудио" по умолчанию при открытии
+            document.querySelectorAll('.text-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('audio').forEach(a => a.style.display = 'block');
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.innerText === 'Слушать' || b.innerText === 'Аудио') b.classList.add('active');
+            });
+
+            // Настройка аудио (путь audio/day1_story.mp3 и т.д.)
             document.getElementById('story-audio').src = `audio/day${num}_story.mp3`;
             document.getElementById('song-audio').src = `audio/day${num}_song.mp3`;
             document.getElementById('child-audio').src = `audio/day${num}_child.mp3`;
             document.getElementById('adult-audio').src = `audio/day${num}_adult.mp3`;
             
             // Настройка текстов
-            document.getElementById('story-text').innerText = dayTexts[num]?.story || "История скоро появится...";
-            document.getElementById('child-text').innerText = dayTexts[num]?.child || "Текст медитации появится позже...";
-            document.getElementById('adult-text').innerText = dayTexts[num]?.adult || "Текст медитации появится позже...";
+            document.getElementById('story-text').innerText = dayTexts[num]?.story || "История для этого дня скоро появится...";
+            document.getElementById('child-text').innerText = dayTexts[num]?.child || "Текст медитации скоро появится...";
+            document.getElementById('adult-text').innerText = dayTexts[num]?.adult || "Текст медитации скоро появится...";
             
             document.getElementById('content-page').style.display = 'block';
             window.scrollTo(0, 0);
         }
 
         function closeDay() {
-            document.querySelectorAll('audio').forEach(a => a.pause());
+            document.querySelectorAll('audio').forEach(a => { a.pause(); a.src = ""; });
             document.getElementById('content-page').style.display = 'none';
         }
 
