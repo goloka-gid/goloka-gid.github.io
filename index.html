@@ -20,7 +20,6 @@
             color: var(--text-color);
             margin: 0; padding: 20px;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
         /* Главная сетка */
@@ -31,7 +30,7 @@
             backdrop-filter: blur(10px);
             border-radius: 20px; padding: 15px 5px; text-align: center;
             box-shadow: 0 8px 20px rgba(155, 135, 245, 0.15);
-            border: 1px solid white; transition: 0.3s;
+            border: 1px solid white;
         }
         .day-card:active { transform: scale(0.95); }
         .day-icon { font-size: 30px; margin: 5px 0; }
@@ -43,37 +42,40 @@
             background: var(--bg-gradient); z-index: 1000;
         }
 
-        /* Эффект маски (плавное исчезновение текста по краям) */
+        /* ФИКСИРОВАННАЯ ШАПКА (теперь она не уплывает) */
+        .header-fixed {
+            position: absolute; top: 0; left: 0; width: 100%; height: 70px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 20px; box-sizing: border-box;
+            background: rgba(253, 251, 247, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1100;
+            border-bottom: 1px solid rgba(155, 135, 245, 0.1);
+        }
+
         .scroll-wrapper {
-            position: relative; height: 100%;
-            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+            position: relative; height: 100%; padding-top: 70px; /* Отступ под шапку */
+            mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
         }
 
         .scroll-container {
             height: 100%; overflow-y: auto; scroll-behavior: smooth;
-            padding: 40px 20px 200px 20px; box-sizing: border-box;
+            padding: 20px 20px 200px 20px; box-sizing: border-box;
         }
 
-        /* Фиксированная шапка внутри страницы чтения */
-        .fixed-header {
-            position: absolute; top: 15px; left: 0; width: 100%;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 20px; box-sizing: border-box; z-index: 1010;
-        }
-        
         .magic-scroll-btn {
-            background: white; border: none; padding: 10px 20px;
+            background: white; border: none; padding: 10px 18px;
             border-radius: 50px; color: var(--accent); font-weight: bold;
-            box-shadow: 0 4px 15px rgba(155, 135, 245, 0.4);
-            font-family: 'Comfortaa'; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(155, 135, 245, 0.3);
+            font-family: 'Comfortaa'; cursor: pointer; font-size: 13px;
         }
         .magic-scroll-btn.active { background: var(--accent); color: white; }
 
         .magic-text {
             font-family: 'Lora', serif;
             font-size: 19px; line-height: 1.8; color: #3a2b5d;
-            text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.8), 1px 1px 3px rgba(155,135,245,0.1);
+            text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.8), 1px 1px 2px rgba(155,135,245,0.1);
             white-space: pre-wrap; margin: 20px 0;
         }
 
@@ -83,7 +85,7 @@
             border: 1px solid rgba(255,255,255,0.6);
         }
 
-        .back-btn { background: white; border: none; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .back-btn { background: white; border: none; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -94,26 +96,26 @@
     </div>
 
     <div id="content-page">
-        <div class="fixed-header">
+        <div class="header-fixed">
             <button class="back-btn" onclick="closeDay()">🔙</button>
             <button class="magic-scroll-btn" id="scroll-btn" onclick="toggleAutoScroll()">✨ Начать чтение</button>
         </div>
 
         <div class="scroll-wrapper">
             <div class="scroll-container" id="scroll-box">
-                <h2 id="title-label" style="text-align: center; color: var(--accent); margin-top: 60px;"></h2>
+                <h2 id="title-label" style="text-align: center; color: var(--accent); margin-bottom: 30px;"></h2>
 
                 <div class="section-box">
                     <div id="story-display" class="magic-text"></div>
                 </div>
 
                 <div class="section-box">
-                    <h3 style="color: var(--accent); margin-top:0;">🎵 Аудио-версия</h3>
+                    <h3 style="color: var(--accent); margin-top:0; font-size: 16px;">🎵 Слушать историю</h3>
                     <audio id="audio-player" controls style="width: 100%;"></audio>
                 </div>
                 
                 <div class="section-box">
-                    <h3 style="color: var(--accent); margin-top:0;">🧘 Практика дня</h3>
+                    <h3 style="color: var(--accent); margin-top:0; font-size: 16px;">🧘 Практика дня</h3>
                     <div id="practice-display" class="magic-text" style="font-size: 16px;"></div>
                 </div>
             </div>
@@ -157,7 +159,8 @@
                 document.getElementById('story-display').innerText = data.story;
                 document.getElementById('practice-display').innerText = data.child + "\n\n---\n\n" + data.adult;
             } catch (e) {
-                document.getElementById('story-display').innerText = "Текст загружается...";
+                document.getElementById('story-display').innerText = "История загружается...";
+                document.getElementById('practice-display').innerText = "";
             }
 
             document.getElementById('content-page').style.display = 'block';
@@ -175,7 +178,7 @@
             } else {
                 scrollInterval = setInterval(() => {
                     container.scrollTop += 1; 
-                    if (container.scrollTop + container.clientHeight >= container.scrollHeight - 20) {
+                    if (container.scrollTop + container.clientHeight >= container.scrollHeight - 10) {
                         stopScroll();
                     }
                 }, 40); 
