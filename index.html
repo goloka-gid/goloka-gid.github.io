@@ -7,42 +7,41 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: #f8f9fa;
-            --accent: #8e7cc3;
-            --text: #333;
+            --bg: #fdfbf7;
+            --accent: #9b87f5;
+            --text: #4a4a4a;
             --card: #ffffff;
         }
-        body { font-family: 'Open Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+        .day-card { background: var(--card); padding: 15px 5px; border-radius: 15px; text-align: center; box-shadow: 0 4px 10px rgba(155, 135, 245, 0.1); cursor: pointer; transition: 0.2s; border: 1px solid #eee; }
+        .day-card:active { transform: scale(0.95); }
         
-        /* Сетка карты */
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
-        .day-card { background: var(--card); padding: 15px 5px; border-radius: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; }
+        #content-page { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); overflow-y: auto; z-index: 100; padding: 20px; box-sizing: border-box; }
+        .section-box { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 20px; border: 1px solid #f0f0f0; }
+        .section-title { font-weight: bold; color: var(--accent); margin-bottom: 12px; display: block; font-size: 18px; }
         
-        /* Экран контента */
-        #content-page { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); overflow-y: auto; z-index: 10; padding: 20px; box-sizing: border-box; }
-        
-        .section-box { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .section-title { font-weight: bold; color: var(--accent); margin-bottom: 10px; display: block; }
-        
-        .tab-menu { display: flex; gap: 10px; margin-bottom: 10px; }
-        .tab-btn { flex: 1; padding: 5px; border: 1px solid var(--accent); background: none; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .tab-menu { display: flex; gap: 8px; margin-bottom: 12px; }
+        .tab-btn { flex: 1; padding: 8px; border: 1px solid var(--accent); background: none; border-radius: 10px; cursor: pointer; color: var(--accent); font-weight: 500; }
         .tab-btn.active { background: var(--accent); color: white; }
         
-        .text-content { display: none; font-size: 14px; line-height: 1.5; color: #555; margin-top: 10px; background: #fdfdfd; padding: 10px; border-radius: 5px; }
-        audio { width: 100%; margin-top: 5px; }
-        
-        .back-btn { background: none; border: none; color: var(--accent); font-size: 16px; margin-bottom: 20px; cursor: pointer; }
+        .text-content { display: none; font-size: 15px; line-height: 1.6; color: #555; margin-top: 12px; white-space: pre-wrap; border-top: 1px solid #eee; padding-top: 10px; }
+        audio { width: 100%; margin-top: 10px; border-radius: 10px; }
+        .back-btn { background: none; border: none; color: var(--accent); font-size: 16px; margin-bottom: 15px; font-weight: bold; }
+        h1, h2, h3 { text-align: center; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center; color: var(--accent);">✨ Путешествие Элли</h2>
+    <h2 style="color: var(--accent); margin-bottom: 5px;">✨ Путешествие Элли</h2>
+    <p style="text-align:center; font-size: 14px; margin-top:0;">30 дней медитаций-игр</p>
+    
     <div class="grid" id="main-grid"></div>
 
     <div id="content-page">
-        <button class="back-btn" onclick="closeDay()">← К карте приключений</button>
-        <h2 id="day-title" style="margin-top:0;">День</h2>
-        <h3 id="artifact-name" style="color:var(--accent); margin-bottom:20px;">Артефакт</h3>
+        <button class="back-btn" onclick="closeDay()">← Карта приключений</button>
+        <h3 id="day-number-label" style="margin:0; font-size: 14px; color: #888;"></h3>
+        <h2 id="artifact-name-label" style="margin-top:5px; color: var(--accent);"></h2>
 
         <div class="section-box">
             <span class="section-title">📖 История Элли</span>
@@ -50,59 +49,74 @@
                 <button class="tab-btn active" onclick="setMode(this, 'story-audio', 'story-text')">Слушать</button>
                 <button class="tab-btn" onclick="setMode(this, 'story-text', 'story-audio')">Читать</button>
             </div>
-            <audio id="story-audio" controls src=""></audio>
-            <div id="story-text" class="text-content">Здесь будет текст истории...</div>
+            <audio id="story-audio" controls></audio>
+            <div id="story-text" class="text-content"></div>
         </div>
 
         <div class="section-box">
             <span class="section-title">🎵 Песенка Элли</span>
-            <audio id="song-audio" controls src=""></audio>
+            <audio id="song-audio" controls></audio>
         </div>
 
         <div class="section-box">
-            <span class="section-title">🧸 Медитация для детей</span>
+            <span class="section-title">🧸 Для детей</span>
             <div class="tab-menu">
-                <button class="tab-btn active" onclick="setMode(this, 'child-audio', 'child-text')">Слушать</button>
-                <button class="tab-btn" onclick="setMode(this, 'child-text', 'child-audio')">Читать</button>
+                <button class="tab-btn active" onclick="setMode(this, 'child-audio', 'child-text')">Аудио</button>
+                <button class="tab-btn" onclick="setMode(this, 'child-text', 'child-audio')">Текст</button>
             </div>
-            <audio id="child-audio" controls src=""></audio>
-            <div id="child-text" class="text-content">Текст детской медитации...</div>
+            <audio id="child-audio" controls></audio>
+            <div id="child-text" class="text-content">Текст медитации для детей скоро появится...</div>
         </div>
 
         <div class="section-box">
-            <span class="section-title">🧘 Медитация для взрослых</span>
+            <span class="section-title">🧘 Для взрослых</span>
             <div class="tab-menu">
-                <button class="tab-btn active" onclick="setMode(this, 'adult-audio', 'adult-text')">Слушать</button>
-                <button class="tab-btn" onclick="setMode(this, 'adult-text', 'adult-audio')">Читать</button>
+                <button class="tab-btn active" onclick="setMode(this, 'adult-audio', 'adult-text')">Аудио</button>
+                <button class="tab-btn" onclick="setMode(this, 'adult-text', 'adult-audio')">Текст</button>
             </div>
-            <audio id="adult-audio" controls src=""></audio>
-            <div id="adult-text" class="text-content">Текст медитации для взрослых...</div>
+            <audio id="adult-audio" controls></audio>
+            <div id="adult-text" class="text-content">Текст медитации для взрослых скоро появится...</div>
         </div>
     </div>
 
     <script>
         const artifacts = ["Волшебная Кисть", "Зеркало Мечты", "Компас Намерений", "Сундук Благодарностей", "Амулет Силы", "Волшебный Пояс", "Щит Настойчивости", "Мост Радости", "Ловец Мыслей", "Волшебная Кнопка", "Рюкзак Поддержки", "Внутренний Сад", "Светофор Настроения", "Домик Спокойствия", "Волшебный Шаг", "Волшебные Очки", "Одеяло Заботы", "Внутренний Фонарик", "Волшебное Сердце", "Лес Тишины", "Волна Радости", "Светлячок Заботы", "Волшебное Ухо", "Река Принятия", "Лампочка Осознания", "Крылья Мечты", "Кристалл Честности", "Золотая Нить", "Звезда Надежды", "Волшебный Ключ"];
 
+        // ТЕКСТЫ ДЛЯ ДНЯ 1
+        const dayTexts = {
+            1: {
+                story: `🌟 Путешествие к себе: Игра-Медитация на 30 дней\n\n✨ Элли и Волшебная Кисть ✨\n\nВ краю, где звёзды падают в ладони, а деревья умеют танцевать при лунном свете...\n\nВ далёком-далёком уголке волшебного леса, где облака нашёптывали древние сказания, жила-была маленькая девочка по имени Элли. Волосы у неё были цвета осенних листьев, а глаза — большие и ясные, как два озёрышка.\n\nОднажды Элли приснился удивительный сон о сокровище. Проснувшись, она нашла на подушке необыкновенную кисточку. Она была невесомой, а внутри неё пульсировал тёплый золотистый свет.\n\n— Это твоя Волшебная Кисть Сердца, — прошептал ветерок. — Всё, что ты нарисуешь ею внутри себя — в своём воображении — непременно оживёт для тебя.\n\nЭлли взмахнула кистью, и в воздухе возникла сияющая радуга! А потом — доброе солнышко и золотая дорожка из звёзд. С тех пор Кисть всегда с ней. И когда ей грустно или страшно, она рисует внутри своего сердца мир, где поют птицы радости и светит солнце веры.\n\nПомни: главное волшебство всегда живёт внутри нас самих...`,
+                child: "Текст детской медитации про Волшебную Кисть...",
+                adult: "Текст взрослой медитации про визуализацию..."
+            }
+        };
+
         const grid = document.getElementById('main-grid');
         artifacts.forEach((name, i) => {
             const card = document.createElement('div');
             card.className = 'day-card';
-            card.innerHTML = `<div style="font-size:10px">ДЕНЬ ${i+1}</div><div style="font-size:20px">✨</div>`;
+            card.innerHTML = `<div style="font-size:10px; color:#aaa;">ДЕНЬ ${i+1}</div><div style="font-size:22px; margin:5px 0;">✨</div><div style="font-size:11px; font-weight:bold; color:#777;">${name}</div>`;
             card.onclick = () => openDay(i+1, name);
             grid.appendChild(card);
         });
 
         function openDay(num, name) {
-            document.getElementById('day-title').innerText = `День ${num}`;
-            document.getElementById('artifact-name').innerText = name;
+            document.getElementById('day-number-label').innerText = `ДЕНЬ ${num}`;
+            document.getElementById('artifact-name-label').innerText = name;
             
-            // Настройка путей к файлам (пример логики)
+            // Настройка аудио
             document.getElementById('story-audio').src = `audio/day${num}_story.mp3`;
             document.getElementById('song-audio').src = `audio/day${num}_song.mp3`;
             document.getElementById('child-audio').src = `audio/day${num}_child.mp3`;
             document.getElementById('adult-audio').src = `audio/day${num}_adult.mp3`;
             
+            // Настройка текстов
+            document.getElementById('story-text').innerText = dayTexts[num]?.story || "История скоро появится...";
+            document.getElementById('child-text').innerText = dayTexts[num]?.child || "Текст медитации появится позже...";
+            document.getElementById('adult-text').innerText = dayTexts[num]?.adult || "Текст медитации появится позже...";
+            
             document.getElementById('content-page').style.display = 'block';
+            window.scrollTo(0, 0);
         }
 
         function closeDay() {
@@ -111,12 +125,15 @@
         }
 
         function setMode(btn, showId, hideId) {
-            // Переключение вкладок
             btn.parentNode.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById(showId).style.display = 'block';
             document.getElementById(hideId).style.display = 'none';
         }
+
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
     </script>
 </body>
 </html>
