@@ -7,10 +7,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Lora:ital,wght@0,400;1,500&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Глобальный сброс для правильного расчета ширины */
+        * { box-sizing: border-box; }
+
         :root {
-            /* Палитра: нежные, волшебные тона */
             --bg-gradient: linear-gradient(135deg, #FFF5E1 0%, #E6E6FA 50%, #E0F7FA 100%);
-            --accent: #8A2BE2; /* Фиолетовый */
+            --accent: #8A2BE2;
             --text-color: #483D8B;
             --gold: #FFD700;
         }
@@ -20,7 +22,8 @@
             background: var(--bg-gradient);
             background-attachment: fixed;
             color: var(--text-color);
-            margin: 0; padding: 20px;
+            margin: 0; 
+            padding: 10px; /* Уменьшили отступ, чтобы влезло 3 колонки */
             min-height: 100vh;
             overflow-x: hidden;
         }
@@ -28,7 +31,7 @@
         /* Анимации */
         @keyframes float {
             0% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
+            50% { transform: translateY(-3px); }
             100% { transform: translateY(0px); }
         }
         
@@ -37,40 +40,65 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Главная сетка */
         #main-view { display: block; animation: fadeIn 0.8s ease-out; }
         
         h1 {
             text-shadow: 2px 2px 0px rgba(255,255,255,0.8);
-            font-size: 26px; margin-bottom: 25px;
+            font-size: 24px; margin: 15px 0 20px 0;
         }
 
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 500px; margin: 0 auto; padding-bottom: 50px; }
+        /* Сетка Дней: Оптимизирована для телефонов */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; /* Уменьшили зазор между карточками */
+            max-width: 500px; 
+            margin: 0 auto; 
+            padding-bottom: 50px; 
+        }
         
         .day-card {
             background: rgba(255, 255, 255, 0.6);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-radius: 24px; padding: 15px 5px; text-align: center;
-            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.8); 
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-radius: 16px; /* Чуть меньше радиус для компактности */
+            padding: 10px 2px; /* Компактные отступы внутри */
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(138, 43, 226, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.8); 
+            transition: all 0.2s;
             position: relative; cursor: pointer;
+            
+            /* Чтобы текст не растягивал карточку */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 0; /* Важно для Grid! */
         }
-        .day-card:active { transform: scale(0.92); }
+        .day-card:active { transform: scale(0.95); }
         
-        /* Прочитанный день */
         .day-card.completed {
             border-color: var(--gold);
             background: rgba(255, 248, 220, 0.8);
         }
         .day-card.completed::after {
-            content: '⭐'; position: absolute; top: -5px; right: -5px;
-            font-size: 16px; animation: float 3s infinite ease-in-out;
+            content: '⭐'; position: absolute; top: -6px; right: -6px;
+            font-size: 14px; animation: float 3s infinite ease-in-out;
             filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+            z-index: 2;
         }
 
-        .day-icon { font-size: 32px; margin: 5px 0; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.1)); }
-        .day-name { font-size: 11px; font-weight: bold; line-height: 1.2; padding: 0 5px; }
+        .day-icon { font-size: 28px; margin: 4px 0; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.1)); }
+        
+        .day-name { 
+            font-size: 10px; 
+            font-weight: bold; 
+            line-height: 1.1; 
+            width: 100%;
+            word-wrap: break-word; /* Перенос длинных слов */
+            overflow-wrap: break-word;
+            padding: 0 2px;
+        }
 
         /* Экран чтения */
         #content-page {
@@ -79,9 +107,9 @@
         }
 
         .header-fixed {
-            position: absolute; top: 0; left: 0; width: 100%; height: 80px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 70px;
             display: flex; justify-content: space-between; align-items: center;
-            padding: 0 20px; box-sizing: border-box;
+            padding: 0 15px; box-sizing: border-box;
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(15px);
             z-index: 1100;
@@ -90,66 +118,66 @@
         }
 
         .scroll-wrapper {
-            position: relative; height: 100%; padding-top: 80px;
-            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+            position: relative; height: 100%; padding-top: 70px;
+            mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
         }
 
         .scroll-container {
             height: 100%; overflow-y: auto; scroll-behavior: smooth;
-            padding: 20px 20px 250px 20px; box-sizing: border-box;
+            padding: 15px 15px 200px 15px; box-sizing: border-box;
         }
 
         .magic-scroll-btn {
             background: linear-gradient(45deg, #9b87f5, #8A2BE2);
-            border: none; padding: 12px 20px;
+            border: none; padding: 10px 18px;
             border-radius: 50px; color: white; font-weight: bold;
             box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
-            font-family: 'Comfortaa'; cursor: pointer; font-size: 14px; transition: 0.3s;
+            font-family: 'Comfortaa'; cursor: pointer; font-size: 13px; transition: 0.3s;
         }
         .magic-scroll-btn:active { transform: scale(0.95); opacity: 0.9; }
         .magic-scroll-btn.active { background: #ff6b6b; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
 
         .magic-text {
             font-family: 'Lora', serif;
-            font-size: 19px; line-height: 1.8; color: #3a2b5d;
+            font-size: 18px; line-height: 1.7; color: #3a2b5d;
             text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.8);
             white-space: pre-wrap; margin: 10px 0;
         }
 
         .section-box {
             background: rgba(255,255,255,0.5);
-            border-radius: 30px; padding: 25px 20px; margin-bottom: 25px;
+            border-radius: 24px; padding: 20px 15px; margin-bottom: 20px;
             border: 2px solid white;
             box-shadow: 0 10px 30px rgba(138, 43, 226, 0.05);
             animation: fadeIn 0.5s ease-out;
         }
 
         .back-btn { 
-            background: white; border: none; width: 45px; height: 45px; border-radius: 50%; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 22px; cursor: pointer; 
+            background: white; border: none; width: 40px; height: 40px; border-radius: 50%; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 20px; cursor: pointer; 
             color: var(--accent); transition: 0.2s;
+            display: flex; align-items: center; justify-content: center;
         }
         .back-btn:active { transform: scale(0.9); }
 
-        /* Медиа (картинки и гифки) */
+        /* Медиа */
         .book-media {
             width: 100%; max-width: 100%; display: block;
-            margin: 25px auto; border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(138, 43, 226, 0.15);
-            border: 5px solid white;
+            margin: 20px auto; border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(138, 43, 226, 0.15);
+            border: 4px solid white;
         }
         
-        /* Видео */
         .video-container {
             position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
-            border-radius: 20px; border: 4px solid white;
+            border-radius: 16px; border: 4px solid white;
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             background: black; margin-top: 15px; display: none;
         }
         .video-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-        audio { filter: drop-shadow(0 4px 4px rgba(0,0,0,0.05)); border-radius: 30px; }
+        audio { filter: drop-shadow(0 4px 4px rgba(0,0,0,0.05)); border-radius: 30px; width: 100%; }
     </style>
 </head>
 <body>
@@ -167,7 +195,7 @@
 
         <div class="scroll-wrapper">
             <div class="scroll-container" id="scroll-box">
-                <h2 id="title-label" style="text-align: center; color: var(--accent); margin-bottom: 20px;"></h2>
+                <h2 id="title-label" style="text-align: center; color: var(--accent); margin-bottom: 15px;"></h2>
 
                 <div class="section-box" id="video-box" style="display:none; text-align:center;">
                     <h3 style="color: var(--accent); margin-top:0; font-size: 16px;">🎬 Волшебное видео</h3>
@@ -182,7 +210,7 @@
 
                 <div class="section-box">
                     <h3 style="color: var(--accent); margin-top:0; font-size: 16px;">🎵 Слушать сказку</h3>
-                    <audio id="audio-player" controls style="width: 100%;"></audio>
+                    <audio id="audio-player" controls></audio>
                 </div>
                 
                 <div class="section-box">
@@ -219,8 +247,9 @@
                 const card = document.createElement('div');
                 const isRead = readDays.includes(dayNum);
                 card.className = `day-card ${isRead ? 'completed' : ''}`;
+                // Используем flex для выравнивания и word-wrap для переноса
                 card.innerHTML = `
-                    <div style="font-size:9px; color: ${isRead ? '#d4af37' : '#aaa'}; font-weight:${isRead?'bold':'normal'}">ДЕНЬ ${dayNum}</div>
+                    <div style="font-size:9px; color: ${isRead ? '#d4af37' : '#aaa'}; font-weight:${isRead?'bold':'normal'}; margin-bottom:2px;">ДЕНЬ ${dayNum}</div>
                     <div class="day-icon">${item.i}</div>
                     <div class="day-name">${item.n}</div>
                 `;
@@ -231,20 +260,17 @@
         
         renderGrid();
 
-        // --- УЛУЧШЕННАЯ ОБРАБОТКА МЕДИА ---
+        // --- ЛОГИКА КОНТЕНТА ---
         function formatStory(text, dayNum) {
             if (!text) return "";
             
-            // Замена [IMAGE] или [IMAGE1], [IMAGE2]...
-            // Регулярка ищет [IMAGE] или [IMAGE] с цифрами
+            // Картинки [IMAGE] и [IMAGE1]...
             let html = text.replace(/\[IMAGE(\d*)\]/g, (match, p1) => {
-                // Если p1 пустой (т.е. просто [IMAGE]), ищем dayX.jpg
-                // Если p1 есть (например "1"), ищем dayX_1.jpg
                 const suffix = p1 ? `_${p1}` : ''; 
                 return `<img src="images/day${dayNum}${suffix}.jpg" class="book-media" alt="Иллюстрация" onerror="this.style.display='none'">`;
             });
 
-            // Замена [GIF] или [GIF1], [GIF2]...
+            // Гифки [GIF] и [GIF1]...
             html = html.replace(/\[GIF(\d*)\]/g, (match, p1) => {
                 const suffix = p1 ? `_${p1}` : '';
                 return `<img src="images/day${dayNum}${suffix}.gif" class="book-media" alt="Анимация" onerror="this.style.display='none'">`;
