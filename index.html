@@ -19,6 +19,7 @@
     <div id="paywall-modal" class="modal-overlay">
         <div class="modal-card">
             <button class="btn-close" onclick="closePaywall()">✖</button>
+            
             <div class="modal-icon" id="modal-icon">🔒</div>
             <div class="modal-title" id="modal-title">День закрыт</div>
             <div class="modal-text" id="modal-text">Введи код доступа.</div>
@@ -195,7 +196,9 @@
             document.getElementById('access-code').style.display = 'none';
             document.getElementById('btn-secondary-action').style.display = 'none';
             const btn = document.getElementById('btn-main-action');
-            btn.innerText = "Хорошо"; btn.onclick = closePaywall;
+            btn.innerText = "Хорошо"; 
+            // Здесь закрытие ведет просто к закрытию, так как это не отказ от покупки
+            btn.onclick = () => { document.getElementById('paywall-modal').style.display = 'none'; }; 
             document.getElementById('paywall-modal').style.display = 'flex';
         }
         
@@ -217,7 +220,6 @@
             document.getElementById('paywall-modal').style.display = 'none';
             document.getElementById('offer-modal').style.display = 'flex';
             
-            // Обновляем текст
             const dayNum = targetDayToUnlock ? targetDayToUnlock : "...";
             const labelText = `Доступ к Дню ${dayNum}`;
             document.getElementById('single-day-label').innerText = labelText;
@@ -261,7 +263,7 @@
             if (type === 'full_discount') {
                 text = "Здравствуйте! Хочу купить ПОЛНЫЙ ДОСТУП СО СКИДКОЙ за 3000 руб";
             } else if (type === 'single_discount') {
-                text = `Здравствуйте! Хочу купить доступ к Дню ${dayNum} (со скидкой 100 руб)`;
+                text = `Здравствуйте! Хочу купить доступ к Дню ${dayNum} за 100 руб (со скидкой)`;
             } else if (type === 'full_price') {
                 text = "Здравствуйте! Хочу купить ПОЛНЫЙ ДОСТУП за 30000 руб";
             } else if (type === 'single_price') {
@@ -274,23 +276,31 @@
         function closeOffer() {
             document.getElementById('offer-modal').style.display = 'none';
             clearInterval(offerInterval); 
-            // Открываем окно доната
+            openDonateModal();
+        }
+
+        function closePaywall() {
+             document.getElementById('paywall-modal').style.display = 'none';
+             // Если это не окно "Не спеши" (где мы просто закрываем), а окно покупки - открываем донат
+             if (targetDayToUnlock) {
+                 openDonateModal();
+             }
+             targetDayToUnlock = null;
+        }
+
+        // --- ЛОГИКА ДОНАТА ---
+        function openDonateModal() {
             document.getElementById('donate-step-1').style.display = 'block';
             document.getElementById('donate-step-2').style.display = 'none';
             document.getElementById('donate-modal').style.display = 'flex';
         }
-        
-        // --- ЛОГИКА ДОНАТА ---
-        function closeDonate() {
-            document.getElementById('donate-modal').style.display = 'none';
-        }
+        function closeDonate() { document.getElementById('donate-modal').style.display = 'none'; }
         function showDonateInfo() {
             document.getElementById('donate-step-1').style.display = 'none';
             document.getElementById('donate-step-2').style.display = 'block';
         }
 
         function resetTimer() { localStorage.removeItem('elli_offer_start'); alert("Таймер сброшен!"); closeOffer(); }
-        function closePaywall() { document.getElementById('paywall-modal').style.display = 'none'; targetDayToUnlock = null; }
 
         async function checkCode() {
             const input = document.getElementById('access-code');
@@ -309,12 +319,16 @@
 
         function activateSingleDay(day) {
             if (!unlockedDays.includes(day)) { unlockedDays.push(day); localStorage.setItem('elli_access', JSON.stringify(unlockedDays)); }
-            alert("✨ День открыт!"); closePaywall(); renderGrid(); openDayMenu(day, items[day-1].n);
+            alert("✨ День открыт!"); 
+            document.getElementById('paywall-modal').style.display = 'none'; 
+            renderGrid(); openDayMenu(day, items[day-1].n);
         }
 
         function activateFullAccess() {
             hasFullAccess = true; localStorage.setItem('elli_full_access', JSON.stringify(true));
-            alert("✨ Все дни открыты!"); closePaywall(); renderGrid();
+            alert("✨ Все дни открыты!"); 
+            document.getElementById('paywall-modal').style.display = 'none'; 
+            renderGrid();
         }
 
         function resetApp() { if(confirm("Сбросить?")) { localStorage.clear(); location.reload(); } }
