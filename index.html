@@ -12,7 +12,7 @@
 
     <div id="view-grid" class="view-section active-view">
         <h1>✨ Путешествие Элли</h1>
-        <p style="text-align:center; font-size:10px; opacity:0.3;" onclick="resetTimer()">[Сброс таймера]</p>
+        <p style="text-align:center; font-size:10px; opacity:0.3;" onclick="resetTimer()">[Сброс таймера (тест)]</p>
         <div class="grid" id="main-grid"></div>
     </div>
 
@@ -22,9 +22,7 @@
             <div class="modal-icon" id="modal-icon">🔒</div>
             <div class="modal-title" id="modal-title">День закрыт</div>
             <div class="modal-text" id="modal-text">Введи код доступа.</div>
-            
             <input type="text" id="access-code" class="code-input" placeholder="Код доступа" oninput="this.value = this.value.toUpperCase()">
-            
             <button class="btn-buy btn-primary" id="btn-main-action" onclick="checkCode()">✨ Активировать</button>
             <button class="btn-buy btn-secondary" id="btn-secondary-action" onclick="openSpecialOffer()">💬 Получить код (Написать Фее)</button>
         </div>
@@ -37,7 +35,6 @@
             <div id="offer-content-active" style="display:none;">
                 <div class="modal-icon">🎁</div>
                 <div class="modal-title">Секретное предложение!</div>
-                
                 <div id="timer-display" class="timer-display">15:00</div>
 
                 <div class="pricing-card highlight">
@@ -47,7 +44,7 @@
                         <span class="old-price">30000 ₽</span>
                         <span class="new-price red">3000 ₽</span>
                     </div>
-                    <button class="btn-buy btn-discount" style="margin-bottom:0" onclick="goToTelegram('full')">Купить ВСЁ за 3000 ₽</button>
+                    <button class="btn-buy btn-discount" style="margin-bottom:0" onclick="goToTelegram('full_discount')">Купить ВСЁ за 3000 ₽</button>
                 </div>
 
                 <div class="pricing-card">
@@ -56,16 +53,51 @@
                         <span class="old-price">1000 ₽</span>
                         <span class="new-price">100 ₽</span>
                     </div>
-                    <button class="btn-buy btn-normal" style="margin-bottom:0" onclick="goToTelegram('single')">Купить за 100 ₽</button>
+                    <button class="btn-buy btn-normal" style="margin-bottom:0" onclick="goToTelegram('single_discount')">Купить за 100 ₽</button>
                 </div>
             </div>
 
             <div id="offer-content-expired" style="display:none;">
-                <div class="modal-icon">⌛</div>
-                <div class="modal-title">Время вышло</div>
-                <div class="modal-text">Скидка истекла. Но вы можете приобрести доступ.</div>
+                <div class="modal-icon">🗝️</div>
+                <div class="modal-title">Получить доступ</div>
+                <div class="modal-text">Скидка истекла. Выберите вариант:</div>
                 
-                <button class="btn-buy btn-primary" onclick="goToTelegram('expired')">Написать Фее</button>
+                <div class="pricing-card full-price">
+                    <div class="offer-label-normal">Полный доступ</div>
+                    <div class="price-row">
+                        <span class="new-price">30 000 ₽</span>
+                    </div>
+                    <button class="btn-buy btn-primary" style="margin-bottom:0" onclick="goToTelegram('full_price')">Купить за 30 000 ₽</button>
+                </div>
+
+                <div class="pricing-card full-price">
+                    <div class="offer-label-normal" id="expired-single-label">Доступ к выбранному дню</div>
+                    <div class="price-row">
+                        <span class="new-price">1 000 ₽</span>
+                    </div>
+                    <button class="btn-buy btn-secondary" style="margin-bottom:0" onclick="goToTelegram('single_price')">Купить за 1 000 ₽</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="donate-modal" class="modal-overlay">
+        <div class="modal-card">
+            <button class="btn-close" onclick="closeDonate()">✖</button>
+            <div class="modal-icon">🙏</div>
+            <div class="modal-title">Поддержка проекта</div>
+            
+            <div id="donate-step-1">
+                <div class="modal-text">Если вы не планируете покупку, возможно, вы захотите поддержать нас?</div>
+                <button class="btn-buy btn-donate-action" onclick="showDonateInfo()">Хочу просто сделать пожертвование</button>
+            </div>
+
+            <div id="donate-step-2" style="display:none;">
+                <div class="modal-text">Вы можете сделать любой перевод удобным для вас способом.</div>
+                <div style="margin: 15px 0; font-size:12px; color:#444; background:#f0f0f0; padding:10px; border-radius:10px;">
+                    Реквизиты и способы оплаты по ссылке ниже 👇
+                </div>
+                <button class="btn-buy btn-primary" onclick="window.open('https://t.me/donate_gid', '_blank')">Перейти к оплате</button>
             </div>
         </div>
     </div>
@@ -162,10 +194,8 @@
             document.getElementById('modal-text').innerHTML = `Пройди сначала День ${nextStep}!`;
             document.getElementById('access-code').style.display = 'none';
             document.getElementById('btn-secondary-action').style.display = 'none';
-            
             const btn = document.getElementById('btn-main-action');
-            btn.innerText = "Хорошо";
-            btn.onclick = closePaywall;
+            btn.innerText = "Хорошо"; btn.onclick = closePaywall;
             document.getElementById('paywall-modal').style.display = 'flex';
         }
         
@@ -177,21 +207,21 @@
             document.getElementById('access-code').style.display = 'block';
             document.getElementById('access-code').value = '';
             document.getElementById('btn-secondary-action').style.display = 'block';
-            
             const btn = document.getElementById('btn-main-action');
-            btn.innerText = "✨ Активировать";
-            btn.onclick = checkCode;
+            btn.innerText = "✨ Активировать"; btn.onclick = checkCode;
             document.getElementById('paywall-modal').style.display = 'flex';
         }
 
-        // --- ЛОГИКА ТАЙМЕРА И ССЫЛОК ---
+        // --- ЛОГИКА ТАЙМЕРА И ОКОН ---
         function openSpecialOffer() {
             document.getElementById('paywall-modal').style.display = 'none';
             document.getElementById('offer-modal').style.display = 'flex';
             
-            // Обновляем текст для второго блока (одиночный день)
-            const dayLabel = targetDayToUnlock ? `доступ к Дню ${targetDayToUnlock}` : "доступ к выбранному дню";
-            document.getElementById('single-day-label').innerText = dayLabel;
+            // Обновляем текст
+            const dayNum = targetDayToUnlock ? targetDayToUnlock : "...";
+            const labelText = `Доступ к Дню ${dayNum}`;
+            document.getElementById('single-day-label').innerText = labelText;
+            document.getElementById('expired-single-label').innerText = labelText;
 
             let startTime = localStorage.getItem('elli_offer_start');
             if (!startTime) {
@@ -226,16 +256,16 @@
         function goToTelegram(type) {
             const baseUrl = "https://t.me/golokagid";
             let text = "";
-            
-            if (type === 'full') {
+            let dayNum = targetDayToUnlock || "...";
+
+            if (type === 'full_discount') {
                 text = "Здравствуйте! Хочу купить ПОЛНЫЙ ДОСТУП СО СКИДКОЙ за 3000 руб";
-            } else if (type === 'single') {
-                // Если выбран конкретный день
-                let dayNum = targetDayToUnlock || "...";
-                text = `Здравствуйте! Хочу купить доступ к Дню ${dayNum}`;
-            } else {
-                // Если таймер истек
-                text = "Здравствуйте! Хочу купить доступ.";
+            } else if (type === 'single_discount') {
+                text = `Здравствуйте! Хочу купить доступ к Дню ${dayNum} (со скидкой 100 руб)`;
+            } else if (type === 'full_price') {
+                text = "Здравствуйте! Хочу купить ПОЛНЫЙ ДОСТУП за 30000 руб";
+            } else if (type === 'single_price') {
+                text = `Здравствуйте! Хочу купить доступ к Дню ${dayNum} за 1000 руб`;
             }
             
             window.open(`${baseUrl}?text=${encodeURIComponent(text)}`, '_blank');
@@ -244,13 +274,22 @@
         function closeOffer() {
             document.getElementById('offer-modal').style.display = 'none';
             clearInterval(offerInterval); 
+            // Открываем окно доната
+            document.getElementById('donate-step-1').style.display = 'block';
+            document.getElementById('donate-step-2').style.display = 'none';
+            document.getElementById('donate-modal').style.display = 'flex';
         }
         
-        function resetTimer() {
-            localStorage.removeItem('elli_offer_start');
-            alert("Таймер сброшен!"); closeOffer();
+        // --- ЛОГИКА ДОНАТА ---
+        function closeDonate() {
+            document.getElementById('donate-modal').style.display = 'none';
+        }
+        function showDonateInfo() {
+            document.getElementById('donate-step-1').style.display = 'none';
+            document.getElementById('donate-step-2').style.display = 'block';
         }
 
+        function resetTimer() { localStorage.removeItem('elli_offer_start'); alert("Таймер сброшен!"); closeOffer(); }
         function closePaywall() { document.getElementById('paywall-modal').style.display = 'none'; targetDayToUnlock = null; }
 
         async function checkCode() {
