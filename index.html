@@ -15,7 +15,7 @@
 
     <div id="view-grid" class="view-section active-view">
         <h1>✨ Путешествие Элли</h1>
-        <p style="text-align:center; font-size:10px; opacity:0.3;" onclick="resetTimer()">[Сбросить таймер (тест)]</p>
+        <p style="text-align:center; font-size:10px; opacity:0.3;" onclick="resetTimer()">[Сброс таймера (тест)]</p>
         <div class="grid" id="main-grid"></div>
     </div>
 
@@ -41,12 +41,19 @@
             <div id="offer-content-active" style="display:none;">
                 <div class="modal-icon">🎁</div>
                 <div class="modal-title">Секретное предложение!</div>
-                <div class="offer-text-highlight">Скидка 90% на доступ!</div>
+                <div class="offer-text-highlight">Скидка 90% на полный доступ!</div>
+                
+                <div class="price-container">
+                    <span class="old-price">1000 ₽</span>
+                    <span style="font-size:20px;">➡️</span>
+                    <span class="new-price">100 ₽</span>
+                </div>
+
                 <div class="modal-text">У тебя есть время, чтобы забрать волшебный код по специальной цене.</div>
                 
                 <div id="timer-display" class="timer-display">15:00</div>
                 
-                <button class="btn-buy btn-discount" onclick="goToTelegram(true)">⚡ Купить со скидкой</button>
+                <button class="btn-buy btn-discount" onclick="goToTelegram(true)">⚡ Купить за 100 ₽</button>
             </div>
 
             <div id="offer-content-expired" style="display:none;">
@@ -108,11 +115,10 @@
         let hasFullAccess = JSON.parse(localStorage.getItem('elli_full_access')) || false;
         let targetDayToUnlock = null;
         
-        // Переменные для таймера
         let offerInterval;
-        const OFFER_DURATION = 15 * 60 * 1000; // 15 минут в миллисекундах
+        const OFFER_DURATION = 15 * 60 * 1000; // 15 минут
 
-        // --- 1. СЕТКА (Оставляем как было) ---
+        // --- 1. СЕТКА ---
         function renderGrid() {
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
@@ -146,7 +152,7 @@
         }
         renderGrid();
 
-        // --- 2. ЛОГИКА ОКОН И ТАЙМЕРА (НОВОЕ) ---
+        // --- 2. ЛОГИКА ОКОН И ТАЙМЕРА ---
 
         function showFutureWarning() {
             const nextStep = items.findIndex((_, i) => !readDays.includes(i+1)) + 1;
@@ -179,24 +185,19 @@
             document.getElementById('paywall-modal').style.display = 'flex';
         }
 
-        // --- ЛОГИКА СПЕЦПРЕДЛОЖЕНИЯ (ТАЙМЕР) ---
+        // --- ЛОГИКА ТАЙМЕРА ---
         function openSpecialOffer() {
-            // Закрываем окно ввода кода
             document.getElementById('paywall-modal').style.display = 'none';
             document.getElementById('offer-modal').style.display = 'flex';
 
-            // Проверяем, когда пользователь первый раз открыл акцию
             let startTime = localStorage.getItem('elli_offer_start');
             
             if (!startTime) {
-                // Если первый раз — засекаем время
                 startTime = Date.now();
                 localStorage.setItem('elli_offer_start', startTime);
             }
 
             updateTimerUI(startTime);
-            
-            // Запускаем обновление каждую секунду
             if (offerInterval) clearInterval(offerInterval);
             offerInterval = setInterval(() => updateTimerUI(startTime), 1000);
         }
@@ -207,17 +208,14 @@
             const remaining = OFFER_DURATION - elapsed;
 
             if (remaining > 0) {
-                // Таймер идет
                 document.getElementById('offer-content-active').style.display = 'block';
                 document.getElementById('offer-content-expired').style.display = 'none';
                 
-                // Форматируем время ММ:СС
                 const minutes = Math.floor(remaining / 60000);
                 const seconds = Math.floor((remaining % 60000) / 1000);
                 document.getElementById('timer-display').innerText = 
                     `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             } else {
-                // Время вышло
                 clearInterval(offerInterval);
                 document.getElementById('offer-content-active').style.display = 'none';
                 document.getElementById('offer-content-expired').style.display = 'block';
@@ -225,33 +223,23 @@
         }
 
         function goToTelegram(isDiscount) {
-            // Формируем разные ссылки
             const baseUrl = "https://t.me/golokagid";
-            let text = "";
-            
-            if (isDiscount) {
-                text = "Здравствуйте! Хочу купить доступ со скидкой 90% (Таймер активен)";
-            } else {
-                text = "Здравствуйте! Хочу купить доступ (Полная цена)";
-            }
-            
-            // Кодируем текст для ссылки
-            const url = `${baseUrl}?text=${encodeURIComponent(text)}`;
-            window.open(url, '_blank');
+            let text = isDiscount ? "Здравствуйте! Хочу купить доступ со скидкой 90% (Таймер активен)" : "Здравствуйте! Хочу купить доступ (Полная цена)";
+            window.open(`${baseUrl}?text=${encodeURIComponent(text)}`, '_blank');
         }
 
         function closeOffer() {
             document.getElementById('offer-modal').style.display = 'none';
-            clearInterval(offerInterval);
+            // Не сбрасываем localStorage, таймер продолжает тикать в фоне
+            clearInterval(offerInterval); 
         }
         
         function resetTimer() {
             localStorage.removeItem('elli_offer_start');
-            alert("Таймер сброшен! Нажми 'Написать Фее' снова.");
+            alert("Таймер сброшен!");
             closeOffer();
         }
 
-        // --- КОДЫ И ДОСТУПЫ (Остальное без изменений) ---
         function closePaywall() { document.getElementById('paywall-modal').style.display = 'none'; targetDayToUnlock = null; }
 
         async function checkCode() {
@@ -278,6 +266,8 @@
             hasFullAccess = true; localStorage.setItem('elli_full_access', JSON.stringify(true));
             alert("✨ Все дни открыты!"); closePaywall(); renderGrid();
         }
+
+        function resetApp() { if(confirm("Сбросить?")) { localStorage.clear(); location.reload(); } }
 
         // --- НАВИГАЦИЯ ---
         function openDayMenu(num, name) {
