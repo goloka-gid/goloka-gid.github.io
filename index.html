@@ -64,17 +64,13 @@
                 
                 <div class="pricing-card full-price">
                     <div class="offer-label-normal">Полный доступ</div>
-                    <div class="price-row">
-                        <span class="new-price">30 000 ₽</span>
-                    </div>
+                    <div class="price-row"><span class="new-price">30 000 ₽</span></div>
                     <button class="btn-buy btn-primary" style="margin-bottom:0" onclick="goToTelegram('full_price')">Купить за 30 000 ₽</button>
                 </div>
 
                 <div class="pricing-card full-price">
                     <div class="offer-label-normal" id="expired-single-label">Доступ к выбранному дню</div>
-                    <div class="price-row">
-                        <span class="new-price">1 000 ₽</span>
-                    </div>
+                    <div class="price-row"><span class="new-price">1 000 ₽</span></div>
                     <button class="btn-buy btn-secondary" style="margin-bottom:0" onclick="goToTelegram('single_price')">Купить за 1 000 ₽</button>
                 </div>
             </div>
@@ -122,16 +118,42 @@
         </div>
         <div class="scroll-wrapper" id="scroll-box">
             <div style="padding: 15px;">
-                <div id="video-area" style="display:none;"><div class="section-box" style="text-align: center;"><h3 style="color: var(--accent); margin:0 0 10px 0;">🎬 Приятного просмотра!</h3><div class="video-wrapper"><video id="video-player" controls playsinline></video></div></div></div>
-                <img id="main-image" src="" class="book-media" style="display:none;" onerror="this.style.display='none'">
-                <div class="section-box" id="text-box" style="display:none;"><div id="text-display" class="magic-text"></div></div>
-                <div class="section-box" id="audio-box" style="display:none;"><h3 id="audio-title" style="color: var(--accent); margin-top:0; font-size: 16px;">🎧 Слушать</h3><audio id="audio-player" controls></audio></div>
+                
+                <div id="status-message" style="display:none; text-align:center; padding:20px; color:#666;"></div>
+
+                <div id="video-area" style="display:none;">
+                    <div class="section-box" style="text-align: center;">
+                        <h3 style="color: var(--accent); margin:0 0 10px 0;">🎬 Приятного просмотра!</h3>
+                        <div class="video-wrapper">
+                            <video id="video-player" controls playsinline></video>
+                        </div>
+                    </div>
+                </div>
+
+                <img id="main-image" src="" class="book-media" style="display:none;">
+
+                <div class="section-box" id="text-box" style="display:none;">
+                    <div id="text-display" class="magic-text"></div>
+                </div>
+
+                <div class="section-box" id="audio-box" style="display:none;">
+                    <h3 id="audio-title" style="color: var(--accent); margin-top:0; font-size: 16px;">🎧 Слушать</h3>
+                    <audio id="audio-player" controls></audio>
+                </div>
+
             </div>
         </div>
         <button class="fab-scroll" id="scroll-btn" onclick="toggleAutoScroll()">✨</button>
     </div>
 
     <script>
+        // --- ЗАПАСНОЙ КОНТЕНТ ДЛЯ ДНЯ 1 (ЕСЛИ ФАЙЛЫ НЕ ГРУЗЯТСЯ) ---
+        const day1_backup = {
+            child: `<p><b>🎨 День 1. Волшебная Кисть</b></p><p><b>✨ Твоя История</b></p><p>Представь: ты просыпаешься утром, потягиваешься — и вдруг чувствуешь лёгкое тепло в ладони. Ты открываешь глаза и видишь... её! Невидимую для других, но светящуюся для тебя Волшебную Кисть.</p><p><b>🧘‍♀️ Медитация-Путешествие</b></p><p>Приготовься к волшебству. Сядь удобно. Вдохни глубоко через нос, представляя золотистый свет. Выдохни серое облачко тревог.</p><p><b>🎨 Рисуем день мечты:</b></p><p>Представь холст твоего дня. Какие цвета ты видишь? Что ты делаешь? Нарисуй это в воображении!</p>`,
+            adult: `<p><b>🎨 День 1. Волшебная Кисть (Взрослые)</b></p><p><b>✨ Твоя История</b></p><p>Ты открываешь глаза утром. На столике записка: «Ты забыл, что можешь создавать. Не вещи — состояния. Вот тебе кисть».</p><p><b>🧘 Практика визуализации</b></p><p>Представь огромный белый холст. Это сегодняшний день. Каким цветом ты хочешь его наполнить? Какое состояние прожить? Нарисуй это состояние.</p><p><b>🧠 Психология:</b> Это упражнение настраивает ретикулярную формацию мозга замечать возможности.</p>`,
+            story: `<p><b>✨ Элли и Волшебная Кисть</b></p><p>Жила-была девочка Элли. Однажды она нашла кисть, которая могла раскрашивать настроение...</p><p><i>(Текст истории скоро появится здесь полностью)</i></p>`
+        };
+
         const items = [
             {n: "Волшебная Кисть", i: "🖌️"}, {n: "Зеркало Мечты", i: "🪞"}, {n: "Компас Намерений", i: "🧭"},
             {n: "Сундук Благодарностей", i: "📦"}, {n: "Амулет Силы", i: "🧿"}, {n: "Волшебный Пояс", i: "🎗️"},
@@ -150,7 +172,6 @@
         let unlockedDays = JSON.parse(localStorage.getItem('elli_access')) || [1];
         let hasFullAccess = JSON.parse(localStorage.getItem('elli_full_access')) || false;
         let targetDayToUnlock = null;
-        
         let offerInterval;
         const OFFER_DURATION = 15 * 60 * 1000;
 
@@ -198,7 +219,6 @@
             document.getElementById('btn-secondary-action').style.display = 'none';
             const btn = document.getElementById('btn-main-action');
             btn.innerText = "Хорошо"; 
-            // Просто закрываем, не предлагаем донат, так как это не отказ от покупки
             btn.onclick = () => { document.getElementById('paywall-modal').style.display = 'none'; }; 
             document.getElementById('paywall-modal').style.display = 'flex';
         }
@@ -269,11 +289,9 @@
             } else if (type === 'single_price') {
                 text = `Здравствуйте! Хочу купить доступ к Дню ${dayNum} за 1000 руб`;
             }
-            
             window.open(`${baseUrl}?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        // --- ЛОГИКА ЗАКРЫТИЯ И ДОНАТА ---
         function closeOffer() {
             document.getElementById('offer-modal').style.display = 'none';
             clearInterval(offerInterval); 
@@ -282,10 +300,7 @@
 
         function closePaywall() {
              document.getElementById('paywall-modal').style.display = 'none';
-             // Если окно было открыто для покупки (targetDayToUnlock задан), открываем донат
-             if (targetDayToUnlock) {
-                 openDonateModal();
-             }
+             if (targetDayToUnlock) openDonateModal();
              targetDayToUnlock = null;
         }
 
@@ -300,9 +315,8 @@
             document.getElementById('donate-step-2').style.display = 'block';
         }
 
-        // --- СИСТЕМНЫЕ ФУНКЦИИ ---
         function resetTimer() { localStorage.removeItem('elli_offer_start'); alert("Таймер сброшен!"); closeOffer(); }
-        
+
         async function checkCode() {
             const input = document.getElementById('access-code');
             const code = input.value.trim().toUpperCase();
@@ -339,69 +353,108 @@
             if (!readDays.includes(num)) { readDays.push(num); localStorage.setItem('elli_progress', JSON.stringify(readDays)); renderGrid(); }
         }
 
-        // --- ОТКРЫТИЕ КОНТЕНТА (С ЗАЩИТОЙ ОТ ОШИБОК) ---
+        // --- ЗАГРУЗКА КОНТЕНТА (ИСПРАВЛЕНА) ---
         async function openContent(type) {
-            switchView('view-content'); stopScroll(); 
-            const container = document.getElementById('scroll-box'); container.scrollTop = 0;
-            const videoArea = document.getElementById('video-area'); const videoPlayer = document.getElementById('video-player');
-            const textBox = document.getElementById('text-box'); const textDisplay = document.getElementById('text-display');
-            const audioBox = document.getElementById('audio-box'); const audioPlayer = document.getElementById('audio-player');
-            const mainImage = document.getElementById('main-image'); const scrollBtn = document.getElementById('scroll-btn');
+            switchView('view-content'); stopScroll();
+            
+            // Получаем элементы
+            const els = {
+                videoArea: document.getElementById('video-area'),
+                videoPlayer: document.getElementById('video-player'),
+                textBox: document.getElementById('text-box'),
+                textDisplay: document.getElementById('text-display'),
+                audioBox: document.getElementById('audio-box'),
+                audioPlayer: document.getElementById('audio-player'),
+                mainImage: document.getElementById('main-image'),
+                scrollBtn: document.getElementById('scroll-btn'),
+                status: document.getElementById('status-message')
+            };
 
-            // Сброс всего
-            videoPlayer.pause(); audioPlayer.pause();
-            videoArea.style.display = 'none'; textBox.style.display = 'none'; audioBox.style.display = 'none'; mainImage.style.display = 'none'; scrollBtn.classList.remove('visible'); textDisplay.innerHTML = ""; 
+            // Сброс
+            els.videoPlayer.pause(); els.audioPlayer.pause();
+            els.videoArea.style.display = 'none'; els.textBox.style.display = 'none'; 
+            els.audioBox.style.display = 'none'; els.mainImage.style.display = 'none';
+            els.scrollBtn.classList.remove('visible'); 
+            els.textDisplay.innerHTML = "";
+            els.status.style.display = "block";
+            els.status.innerText = "Загрузка...";
+
+            // Обработчики ошибок для медиа
+            els.videoPlayer.onerror = () => { els.status.innerText = "Видео не найдено (проверьте папку videos)"; els.videoArea.style.display='none'; };
+            els.audioPlayer.onerror = () => { console.log("Аудио не найдено"); els.audioBox.style.display='none'; };
+            els.mainImage.onerror = () => { els.mainImage.style.display='none'; };
 
             try {
                 if (type === 'story') {
                     document.getElementById('header-title').innerText = "📖 История";
-                    await loadTextContent(`texts/day${currentDayNum}_story.html`);
-                    audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать сказку";
-                    audioPlayer.src = `audio/day${currentDayNum}_story.mp3`; scrollBtn.classList.add('visible');
+                    await loadTextContent(`texts/day${currentDayNum}_story.html`, 'story');
+                    els.audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать сказку";
+                    els.audioPlayer.src = `audio/day${currentDayNum}_story.mp3`; 
+                    els.scrollBtn.classList.add('visible');
+
                 } else if (type === 'video') {
                     document.getElementById('header-title').innerText = "🎬 Видео";
-                    videoArea.style.display = 'block'; videoPlayer.src = `videos/day${currentDayNum}.mp4`;
+                    els.videoArea.style.display = 'block'; 
+                    els.videoPlayer.src = `videos/day${currentDayNum}.mp4`;
+                    els.status.style.display = "none";
+
                 } else if (type === 'song') {
                     document.getElementById('header-title').innerText = "🎵 Песенка";
-                    mainImage.src = `images/day${currentDayNum}.jpg`; mainImage.style.display = 'block';
-                    audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать песенку";
-                    audioPlayer.src = `audio/day${currentDayNum}_song.mp3`;
+                    els.mainImage.src = `images/day${currentDayNum}.jpg`; 
+                    els.mainImage.style.display = 'block';
+                    els.audioBox.style.display = 'block'; 
+                    document.getElementById('audio-title').innerText = "🎧 Слушать песенку";
+                    els.audioPlayer.src = `audio/day${currentDayNum}_song.mp3`;
+                    els.status.style.display = "none";
+
                 } else if (type === 'child') {
                     document.getElementById('header-title').innerText = "👶 Практика (Дети)";
-                    await loadTextContent(`texts/day${currentDayNum}_child.html`);
-                    audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать практику";
-                    audioPlayer.src = `audio/day${currentDayNum}_child.mp3`; scrollBtn.classList.add('visible');
+                    await loadTextContent(`texts/day${currentDayNum}_child.html`, 'child');
+                    els.audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать практику";
+                    els.audioPlayer.src = `audio/day${currentDayNum}_child.mp3`; els.scrollBtn.classList.add('visible');
+
                 } else if (type === 'adult') {
                     document.getElementById('header-title').innerText = "🧘‍♀️ Практика (Взр)";
-                    await loadTextContent(`texts/day${currentDayNum}_adult.html`);
-                    audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать практику";
-                    audioPlayer.src = `audio/day${currentDayNum}_adult.mp3`; scrollBtn.classList.add('visible');
+                    await loadTextContent(`texts/day${currentDayNum}_adult.html`, 'adult');
+                    els.audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать практику";
+                    els.audioPlayer.src = `audio/day${currentDayNum}_adult.mp3`; els.scrollBtn.classList.add('visible');
                 }
                 
-                // Перезагрузка плеера, чтобы подхватил новый файл
-                if (audioBox.style.display === 'block') audioPlayer.load();
+                if (els.audioBox.style.display === 'block') els.audioPlayer.load();
 
             } catch (err) {
-                console.error("Ошибка открытия контента:", err);
+                console.error(err);
+                els.status.innerText = "Ошибка открытия контента.";
             }
         }
 
-        async function loadTextContent(filePath) {
+        // Функция загрузки текста с ФОЛЛБЕКОМ (Запасной вариант)
+        async function loadTextContent(filePath, typeKey) {
             const textBox = document.getElementById('text-box');
             const textDisplay = document.getElementById('text-display');
+            const status = document.getElementById('status-message');
+
             try {
                 const res = await fetch(filePath);
                 if (res.ok) {
                     let text = await res.text();
                     textDisplay.innerHTML = formatText(text, currentDayNum);
                     textBox.style.display = 'block';
+                    status.style.display = 'none';
                 } else {
-                    textDisplay.innerHTML = "<p style='text-align:center; padding:20px;'>Текст пока не добавлен 😔</p>";
-                    textBox.style.display = 'block';
+                    throw new Error("File not found");
                 }
             } catch (e) {
-                textDisplay.innerHTML = "<p style='text-align:center'>Ошибка загрузки</p>";
-                textBox.style.display = 'block';
+                // Если файл не найден, проверяем запасной вариант (только для 1 дня)
+                if (currentDayNum === 1 && day1_backup[typeKey]) {
+                    console.log("Используем встроенный текст для Дня 1");
+                    textDisplay.innerHTML = formatText(day1_backup[typeKey], 1);
+                    textBox.style.display = 'block';
+                    status.style.display = 'none';
+                } else {
+                    status.innerText = "Текст пока не загружен. (Файл не найден)";
+                    status.style.display = 'block';
+                }
             }
         }
 
