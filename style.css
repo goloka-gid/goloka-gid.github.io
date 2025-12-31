@@ -202,5 +202,36 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
 
 .btn-secondary { background: #f0f0f0; color: #555; font-size: 12px; }
 .btn-close {
+    /* ... (весь твой старый код выше) ... */
+
+/* СТИЛИ ДЛЯ ТАЙМЕРА И АКЦИИ */
+.timer-display {
+    font-size: 36px;
+    font-weight: bold;
+    color: #ff4757; /* Красный цвет тревоги/акции */
+    margin: 15px 0;
+    font-family: monospace; /* Чтобы цифры не скакали */
+    letter-spacing: 2px;
+}
+
+.offer-text-highlight {
+    font-size: 16px;
+    color: #2ed573; /* Зеленый цвет успеха */
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.btn-discount {
+    background: linear-gradient(45deg, #ff6b81, #ff4757);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+    animation: pulse 1.5s infinite;
+}
+
+.btn-expired {
+    background: #ccc;
+    color: #666;
+    cursor: default;
+}
     position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #999;
 }
