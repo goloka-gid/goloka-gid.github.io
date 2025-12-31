@@ -1,4 +1,4 @@
-/* style.css - Версия с кликабельными будущими днями */
+/* style.css */
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -35,7 +35,7 @@ h1, h2 { text-align: center; color: var(--accent); text-shadow: 1px 1px 0px rgba
 h1 { font-size: 24px; margin: 15px 0 20px 0; }
 h2 { font-size: 20px; }
 
-/* СЕТКА ДНЕЙ */
+/* СЕТКА */
 .grid { 
     display: grid; grid-template-columns: repeat(3, 1fr); 
     gap: 8px; max-width: 500px; margin: 0 auto; padding-bottom: 50px; 
@@ -60,7 +60,6 @@ h2 { font-size: 20px; }
     font-size: 14px; animation: float 3s infinite ease-in-out;
 }
 
-/* ЗАКРЫТЫЙ ДЕНЬ (PAYWALL) */
 .day-card.locked {
     background: var(--locked-bg);
     border-color: rgba(255,255,255,0.3);
@@ -69,13 +68,7 @@ h2 { font-size: 20px; }
 .day-card.locked .day-icon { filter: grayscale(100%); opacity: 0.5; }
 .lock-icon { position: absolute; top: 5px; right: 5px; font-size: 12px; }
 
-/* БУДУЩИЙ ДЕНЬ (FROZEN) */
-/* Мы делаем его полупрозрачным, но КЛИКАБЕЛЬНЫМ */
-.day-card.frozen {
-    opacity: 0.5; 
-    filter: grayscale(100%);
-    /* pointer-events: none; <--- ЭТУ СТРОКУ УДАЛИЛИ, ЧТОБЫ МОЖНО БЫЛО НАЖАТЬ */
-}
+.day-card.frozen { opacity: 0.5; filter: grayscale(100%); }
 
 .day-icon { font-size: 28px; margin: 4px 0; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.1)); }
 .day-name { font-size: 10px; font-weight: bold; line-height: 1.1; word-wrap: break-word; padding: 0 2px; }
@@ -165,7 +158,7 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
 .fab-scroll.visible { display: flex; }
 .fab-scroll.active { background: #ff6b6b; }
 
-/* МОДАЛЬНОЕ ОКНО */
+/* МОДАЛЬНЫЕ ОКНА */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
@@ -174,13 +167,33 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
 }
 .modal-card {
     background: white; width: 90%; max-width: 350px;
-    border-radius: 24px; padding: 25px; text-align: center;
+    border-radius: 24px; padding: 35px 25px 25px 25px; /* Сверху больше места под крестик */
+    text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    position: relative;
+    position: relative; /* Чтобы крестик позиционировался относительно карты */
 }
 .modal-icon { font-size: 40px; margin-bottom: 10px; animation: float 3s infinite; }
 .modal-title { font-size: 18px; font-weight: bold; color: var(--accent); margin-bottom: 10px; }
 .modal-text { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.4; }
+
+/* КРЕСТИК ЗАКРЫТИЯ (ИСПРАВЛЕННЫЙ) */
+.btn-close {
+    position: absolute;
+    top: 10px; 
+    right: 10px; 
+    background: #f0f0f0; 
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    color: #555;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.2s;
+}
+.btn-close:hover { background: #e0e0e0; }
 
 .code-input {
     width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px;
@@ -199,73 +212,23 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
     box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3);
 }
 .btn-primary:active { transform: scale(0.97); }
-
 .btn-secondary { background: #f0f0f0; color: #555; font-size: 12px; }
-.btn-close {
-    /* ... (весь твой старый код выше) ... */
 
-/* --- СТИЛИ ДЛЯ ТАЙМЕРА И АКЦИИ (Обновленные) --- */
+/* СТИЛИ ТАЙМЕРА И АКЦИИ */
 .timer-display {
-    font-size: 32px;
-    font-weight: bold;
-    color: #ff4757;
-    margin: 10px 0;
-    font-family: monospace;
-    letter-spacing: 2px;
+    font-size: 32px; font-weight: bold; color: #ff4757;
+    margin: 10px 0; font-family: monospace; letter-spacing: 2px;
 }
-
 .offer-text-highlight {
-    font-size: 16px;
-    color: #2ed573;
-    font-weight: bold;
-    margin-bottom: 5px;
+    font-size: 16px; color: #2ed573; font-weight: bold; margin-bottom: 5px;
 }
-
-/* Блок цен */
 .price-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    margin: 15px 0;
-    background: #f9f9f9;
-    padding: 10px;
-    border-radius: 15px;
+    display: flex; justify-content: center; align-items: center; gap: 15px;
+    margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 15px;
 }
-
-.old-price {
-    font-size: 18px;
-    color: #999;
-    text-decoration: line-through; /* Зачеркивание */
-}
-
-.new-price {
-    font-size: 24px;
-    font-weight: bold;
-    color: #ff4757; /* Яркий цвет */
-    animation: pulse 2s infinite;
-}
-
+.old-price { font-size: 18px; color: #999; text-decoration: line-through; }
+.new-price { font-size: 24px; font-weight: bold; color: #ff4757; animation: pulse 2s infinite; }
 .btn-discount {
-    background: linear-gradient(45deg, #ff6b81, #ff4757);
-    color: white;
-    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
-    font-weight: bold;
-}
-
-/* Исправление для крестика, чтобы он точно нажимался */
-.btn-close {
-    position: absolute;
-    top: 15px; 
-    right: 15px; 
-    background: white; /* Фон чтобы было видно */
-    border-radius: 50%;
-    width: 30px; height: 30px;
-    border: 1px solid #eee;
-    font-size: 16px;
-    cursor: pointer;
-    color: #555;
-    z-index: 10; /* Поверх всего */
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background: linear-gradient(45deg, #ff6b81, #ff4757); color: white;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); font-weight: bold;
 }
