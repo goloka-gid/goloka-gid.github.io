@@ -15,7 +15,20 @@
 
     <div id="view-grid" class="view-section active-view">
         <h1>✨ Путешествие Элли</h1>
+        <p style="text-align:center; font-size:10px; opacity:0.5;" onclick="resetPurchases()">[Сбросить покупки - тест]</p>
         <div class="grid" id="main-grid"></div>
+    </div>
+
+    <div id="paywall-modal" class="modal-overlay">
+        <div class="modal-card">
+            <button class="btn-close" onclick="closePaywall()">✖</button>
+            <div class="modal-icon">🔒</div>
+            <div class="modal-title">Этот день закрыт</div>
+            <div class="modal-text">Открой доступ к этому дню или разблокируй всё путешествие целиком!</div>
+            
+            <button class="btn-buy btn-primary" onclick="buyFullAccess()">✨ Открыть всё навсегда</button>
+            <button class="btn-buy btn-secondary" onclick="buySingleDay()">Отрыть только этот день</button>
+        </div>
     </div>
 
     <div id="view-menu" class="view-section">
@@ -74,7 +87,6 @@
 
         <div class="scroll-wrapper" id="scroll-box">
             <div style="padding: 15px;">
-                
                 <div id="video-area" style="display:none;">
                     <div class="section-box" style="text-align: center;">
                         <h3 style="color: var(--accent); margin:0 0 10px 0;">🎬 Приятного просмотра!</h3>
@@ -83,18 +95,14 @@
                         </div>
                     </div>
                 </div>
-
                 <img id="main-image" src="" class="book-media" style="display:none;" onerror="this.style.display='none'">
-
                 <div class="section-box" id="text-box" style="display:none;">
                     <div id="text-display" class="magic-text"></div>
                 </div>
-
                 <div class="section-box" id="audio-box" style="display:none;">
                     <h3 id="audio-title" style="color: var(--accent); margin-top:0; font-size: 16px;">🎧 Слушать</h3>
                     <audio id="audio-player" controls></audio>
                 </div>
-
             </div>
         </div>
         
@@ -116,10 +124,18 @@
             {n: "Золотая Нить", i: "🧵"}, {n: "Звезда Надежды", i: "⭐"}, {n: "Волшебный Ключ", i: "🔑"}
         ];
 
+        // --- СОСТОЯНИЕ ПРИЛОЖЕНИЯ ---
         let currentDayNum = 1;
+        // Прочитанные дни (для галочки)
         let readDays = JSON.parse(localStorage.getItem('elli_progress')) || [];
+        // Купленные дни (для доступа). По умолчанию День 1 всегда куплен.
+        let unlockedDays = JSON.parse(localStorage.getItem('elli_access')) || [1];
+        // Флаг полной покупки
+        let hasFullAccess = JSON.parse(localStorage.getItem('elli_full_access')) || false;
+
         let isScrolling = false;
         let scrollInterval;
+        let targetDayToBuy = null; // Какой день хочет купить пользователь
 
         // --- 1. ОТРИСОВКА СЕТКИ ---
         function renderGrid() {
@@ -128,27 +144,96 @@
             items.forEach((item, i) => {
                 const dayNum = i + 1;
                 const card = document.createElement('div');
+                
+                // Проверка: День 1 всегда открыт, остальные проверяем
+                const isUnlocked = (dayNum === 1) || hasFullAccess || unlockedDays.includes(dayNum);
                 const isRead = readDays.includes(dayNum);
-                card.className = `day-card ${isRead ? 'completed' : ''}`;
+                
+                // Классы для стилей
+                let classes = 'day-card';
+                if (isRead) classes += ' completed';
+                if (!isUnlocked) classes += ' locked';
+                
+                card.className = classes;
+                
+                // Внутренности карточки (добавляем замок если закрыто)
+                let iconHtml = `<div class="day-icon">${item.i}</div>`;
+                let lockHtml = !isUnlocked ? `<div class="lock-icon">🔒</div>` : '';
+                
                 card.innerHTML = `
+                    ${lockHtml}
                     <div style="font-size:9px; color: ${isRead ? '#d4af37' : '#aaa'}; font-weight:${isRead?'bold':'normal'};">ДЕНЬ ${dayNum}</div>
-                    <div class="day-icon">${item.i}</div>
+                    ${iconHtml}
                     <div class="day-name">${item.n}</div>
                 `;
-                card.onclick = () => openDayMenu(dayNum, item.n);
+                
+                // Логика клика
+                if (isUnlocked) {
+                    card.onclick = () => openDayMenu(dayNum, item.n);
+                } else {
+                    card.onclick = () => showPaywall(dayNum);
+                }
+                
                 grid.appendChild(card);
             });
         }
         renderGrid();
 
-        // --- 2. ОТКРЫТИЕ МЕНЮ ДНЯ ---
+        // --- 2. ЛОГИКА ПОКУПКИ (PAYWALL) ---
+        
+        function showPaywall(dayNum) {
+            targetDayToBuy = dayNum;
+            document.getElementById('paywall-modal').style.display = 'flex';
+        }
+
+        function closePaywall() {
+            document.getElementById('paywall-modal').style.display = 'none';
+            targetDayToBuy = null;
+        }
+
+        // Симуляция покупки ОДНОГО дня
+        function buySingleDay() {
+            if (targetDayToBuy) {
+                if (!unlockedDays.includes(targetDayToBuy)) {
+                    unlockedDays.push(targetDayToBuy);
+                    localStorage.setItem('elli_access', JSON.stringify(unlockedDays));
+                }
+                
+                alert(`✨ День ${targetDayToBuy} открыт!`);
+                closePaywall();
+                renderGrid(); // Обновляем замочки
+                
+                // Сразу открываем меню этого дня
+                const item = items[targetDayToBuy - 1];
+                openDayMenu(targetDayToBuy, item.n);
+            }
+        }
+
+        // Симуляция покупки ВСЕГО
+        function buyFullAccess() {
+            hasFullAccess = true;
+            localStorage.setItem('elli_full_access', JSON.stringify(true));
+            
+            alert(`✨ Поздравляем! Весь курс открыт!`);
+            closePaywall();
+            renderGrid();
+        }
+
+        // Сброс покупок (для тестов)
+        function resetPurchases() {
+            if(confirm("Сбросить все покупки и прогресс?")) {
+                localStorage.removeItem('elli_access');
+                localStorage.removeItem('elli_full_access');
+                localStorage.removeItem('elli_progress');
+                location.reload();
+            }
+        }
+
+        // --- 3. НАВИГАЦИЯ И КОНТЕНТ (КАК РАНЬШЕ) ---
         function openDayMenu(num, name) {
             currentDayNum = num;
-            
             switchView('view-menu');
             document.getElementById('menu-title').innerText = `День ${num}: ${name}`;
-
-            // Сохраняем, что день открыт
             if (!readDays.includes(num)) {
                 readDays.push(num);
                 localStorage.setItem('elli_progress', JSON.stringify(readDays));
@@ -156,12 +241,9 @@
             }
         }
 
-        // --- 3. ЗАГРУЗКА КОНТЕНТА (HTML, ВИДЕО, АУДИО) ---
         async function openContent(type) {
             switchView('view-content');
             stopScroll(); 
-
-            // Получаем элементы
             const container = document.getElementById('scroll-box');
             container.scrollTop = 0;
             const titleLabel = document.getElementById('header-title');
@@ -176,7 +258,6 @@
             const mainImage = document.getElementById('main-image');
             const scrollBtn = document.getElementById('scroll-btn');
 
-            // СБРОС ВСЕГО ПЕРЕД ОТКРЫТИЕМ
             videoPlayer.pause();
             audioPlayer.pause();
             videoArea.style.display = 'none';
@@ -186,67 +267,46 @@
             scrollBtn.classList.remove('visible');
             textDisplay.innerHTML = ""; 
 
-            // --- ЛОГИКА ПО ТИПАМ ---
-            
-            // 1. ИСТОРИЯ
             if (type === 'story') {
                 titleLabel.innerText = "📖 История";
-                await loadTextContent(`texts/day${currentDayNum}_story.html`); // Читаем HTML файл
-                
+                await loadTextContent(`texts/day${currentDayNum}_story.html`);
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать сказку";
                 audioPlayer.src = `audio/day${currentDayNum}_story.mp3`;
                 scrollBtn.classList.add('visible');
-
-            // 2. ВИДЕО
             } else if (type === 'video') {
                 titleLabel.innerText = "🎬 Видео";
                 videoArea.style.display = 'block';
                 videoPlayer.src = `videos/day${currentDayNum}.mp4`;
-
-            // 3. ПЕСНЯ
             } else if (type === 'song') {
                 titleLabel.innerText = "🎵 Песенка";
-                // Показываем картинку дня
                 mainImage.src = `images/day${currentDayNum}.jpg`;
                 mainImage.style.display = 'block';
-                
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать песенку";
                 audioPlayer.src = `audio/day${currentDayNum}_song.mp3`;
-
-            // 4. ДЕТИ
             } else if (type === 'child') {
                 titleLabel.innerText = "👶 Практика (Дети)";
                 await loadTextContent(`texts/day${currentDayNum}_child.html`);
-                
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать практику";
                 audioPlayer.src = `audio/day${currentDayNum}_child.mp3`;
                 scrollBtn.classList.add('visible');
-
-            // 5. ВЗРОСЛЫЕ
             } else if (type === 'adult') {
                 titleLabel.innerText = "🧘‍♀️ Практика (Взр)";
                 await loadTextContent(`texts/day${currentDayNum}_adult.html`);
-                
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать практику";
                 audioPlayer.src = `audio/day${currentDayNum}_adult.mp3`;
                 scrollBtn.classList.add('visible');
             }
             
-            // Если есть аудио, подгружаем его
             if (audioBox.style.display === 'block') audioPlayer.load();
         }
 
-        // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
-
-        // Загрузка текста из файла
         async function loadTextContent(filePath) {
             const textBox = document.getElementById('text-box');
             const textDisplay = document.getElementById('text-display');
-            
             try {
                 const res = await fetch(filePath);
                 if (res.ok) {
@@ -263,21 +323,17 @@
             }
         }
 
-        // Переключение экранов
         function switchView(viewId) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
             document.getElementById(viewId).classList.add('active-view');
         }
 
-        // Обработка меток [IMAGE] и [GIF]
         function formatText(text, dayNum) {
             if (!text) return "";
-            // Картинки
             let html = text.replace(/\[IMAGE(\d*)\]/g, (match, p1) => {
                 const suffix = p1 ? `_${p1}` : ''; 
                 return `<img src="images/day${dayNum}${suffix}.jpg" class="book-media" onerror="this.style.display='none'">`;
             });
-            // Гифки
             html = html.replace(/\[GIF(\d*)\]/g, (match, p1) => {
                 const suffix = p1 ? `_${p1}` : '';
                 return `<img src="images/day${dayNum}${suffix}.gif" class="book-media" onerror="this.style.display='none'">`;
@@ -285,7 +341,6 @@
             return html;
         }
 
-        // Навигация
         function goBackToMenu() {
             stopScroll();
             document.getElementById('audio-player').pause();
@@ -300,7 +355,6 @@
             switchView('view-grid');
         }
 
-        // Автоскролл
         function toggleAutoScroll() {
             const container = document.getElementById('scroll-box');
             const btn = document.getElementById('scroll-btn');
@@ -327,13 +381,11 @@
             if(btn) btn.classList.remove('active');
         }
 
-        // Настройка Telegram
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand();
         tg.setHeaderColor('#fdfbf7'); 
         tg.setBackgroundColor('#fdfbf7');
         
-        // Кнопка Назад (системная)
         tg.BackButton.onClick(() => {
             if (document.getElementById('view-menu').classList.contains('active-view')) goHome();
             else if (document.getElementById('view-content').classList.contains('active-view')) goBackToMenu();
