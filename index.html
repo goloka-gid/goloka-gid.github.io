@@ -4,15 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Мир Элли</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Lora:ital,wght@0,400;1,500&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="style.css">
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
     <div id="view-grid" class="view-section active-view">
         <h1>✨ Путешествие Элли</h1>
-        <p style="text-align:center; font-size:10px; opacity:0.3;" onclick="resetApp()">[Сброс настроек]</p>
+        <p style="text-align:center; font-size:10px; opacity:0.3;" onclick="resetTimer()">[Сбросить таймер (тест)]</p>
         <div class="grid" id="main-grid"></div>
     </div>
 
@@ -21,13 +24,38 @@
             <button class="btn-close" onclick="closePaywall()">✖</button>
             <div class="modal-icon" id="modal-icon">🔒</div>
             <div class="modal-title" id="modal-title">День закрыт</div>
-            <div class="modal-text" id="modal-text">Чтобы открыть эту главу, введи волшебный код доступа.</div>
+            <div class="modal-text" id="modal-text">Введи код доступа.</div>
             
-            <input type="text" id="access-code" class="code-input" placeholder="Введи код здесь..." oninput="this.value = this.value.toUpperCase()">
+            <input type="text" id="access-code" class="code-input" placeholder="Код доступа" oninput="this.value = this.value.toUpperCase()">
             
-            <button class="btn-buy btn-primary" id="btn-main-action" onclick="checkCode()">✨ Активировать код</button>
+            <button class="btn-buy btn-primary" id="btn-main-action" onclick="checkCode()">✨ Активировать</button>
             
-            <button class="btn-buy btn-secondary" id="btn-secondary-action" onclick="contactSupport()">💬 Написать Фее</button>
+            <button class="btn-buy btn-secondary" id="btn-secondary-action" onclick="openSpecialOffer()">💬 Получить код (Написать Фее)</button>
+        </div>
+    </div>
+
+    <div id="offer-modal" class="modal-overlay">
+        <div class="modal-card">
+            <button class="btn-close" onclick="closeOffer()">✖</button>
+            
+            <div id="offer-content-active" style="display:none;">
+                <div class="modal-icon">🎁</div>
+                <div class="modal-title">Секретное предложение!</div>
+                <div class="offer-text-highlight">Скидка 90% на доступ!</div>
+                <div class="modal-text">У тебя есть время, чтобы забрать волшебный код по специальной цене.</div>
+                
+                <div id="timer-display" class="timer-display">15:00</div>
+                
+                <button class="btn-buy btn-discount" onclick="goToTelegram(true)">⚡ Купить со скидкой</button>
+            </div>
+
+            <div id="offer-content-expired" style="display:none;">
+                <div class="modal-icon">⌛</div>
+                <div class="modal-title">Время вышло</div>
+                <div class="modal-text">К сожалению, секретный таймер истек.<br>Но ты все равно можешь приобрести доступ к сказке.</div>
+                
+                <button class="btn-buy btn-primary" onclick="goToTelegram(false)">Купить доступ</button>
+            </div>
         </div>
     </div>
 
@@ -79,17 +107,18 @@
         let unlockedDays = JSON.parse(localStorage.getItem('elli_access')) || [1];
         let hasFullAccess = JSON.parse(localStorage.getItem('elli_full_access')) || false;
         let targetDayToUnlock = null;
+        
+        // Переменные для таймера
+        let offerInterval;
+        const OFFER_DURATION = 15 * 60 * 1000; // 15 минут в миллисекундах
 
-        // --- 1. ГЛАВНАЯ ЛОГИКА СЕТКИ ---
+        // --- 1. СЕТКА (Оставляем как было) ---
         function renderGrid() {
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
-            
             items.forEach((item, i) => {
                 const dayNum = i + 1;
                 const card = document.createElement('div');
-                
-                // Статусы
                 const isRead = readDays.includes(dayNum);
                 const isUnlocked = (dayNum === 1) || hasFullAccess || unlockedDays.includes(dayNum);
                 const prevDayRead = (dayNum === 1) || readDays.includes(dayNum - 1);
@@ -98,220 +127,198 @@
                 let iconHtml = `<div class="day-icon">${item.i}</div>`;
                 let lockHtml = '';
 
-                // ОТОБРАЖЕНИЕ
                 if (!prevDayRead) {
-                    // БУДУЩИЙ ДЕНЬ (FROZEN)
-                    classes += ' frozen';
-                    lockHtml = `<div class="lock-icon" style="opacity:0.5">❄️</div>`; // Снежинка как символ заморозки
+                    classes += ' frozen'; lockHtml = `<div class="lock-icon" style="opacity:0.5">❄️</div>`;
                 } else if (!isUnlocked) {
-                    // ЗАКРЫТЫЙ ДЕНЬ (LOCKED)
-                    classes += ' locked';
-                    lockHtml = `<div class="lock-icon">🔒</div>`;
-                } else if (isRead) {
-                    classes += ' completed';
-                }
+                    classes += ' locked'; lockHtml = `<div class="lock-icon">🔒</div>`;
+                } else if (isRead) classes += ' completed';
 
                 card.className = classes;
-                card.innerHTML = `
-                    ${lockHtml}
-                    <div style="font-size:9px; color: ${isRead ? '#d4af37' : '#aaa'}; font-weight:${isRead?'bold':'normal'};">ДЕНЬ ${dayNum}</div>
-                    ${iconHtml}
-                    <div class="day-name">${item.n}</div>
-                `;
+                card.innerHTML = `${lockHtml}<div style="font-size:9px; color: ${isRead ? '#d4af37' : '#aaa'}; font-weight:${isRead?'bold':'normal'};">ДЕНЬ ${dayNum}</div>${iconHtml}<div class="day-name">${item.n}</div>`;
                 
-                // КЛИКИ (САМОЕ ВАЖНОЕ)
                 if (prevDayRead) { 
-                    if (isUnlocked) {
-                        // Обычное открытие
-                        card.onclick = () => openDayMenu(dayNum, item.n);
-                    } else {
-                        // Предложить купить ЭТОТ день
-                        card.onclick = () => showPaywall(dayNum);
-                    }
+                    card.onclick = isUnlocked ? () => openDayMenu(dayNum, item.n) : () => showPaywall(dayNum);
                 } else {
-                    // Предложить вернуться к ПРОШЛОМУ дню
                     card.onclick = () => showFutureWarning();
                 }
-                
                 grid.appendChild(card);
             });
         }
         renderGrid();
 
-        // --- 2. ВСПОМОГАТЕЛЬНЫЕ ОКНА ---
+        // --- 2. ЛОГИКА ОКОН И ТАЙМЕРА (НОВОЕ) ---
 
-        // Находит самый первый непройденный день
-        function getNextStepDay() {
-            for (let i = 1; i <= 30; i++) {
-                if (!readDays.includes(i)) return i;
-            }
-            return 30;
-        }
-
-        // Окно "Не спеши!"
         function showFutureWarning() {
-            const nextStep = getNextStepDay();
-            const nextDayName = items[nextStep-1].n;
-            
-            // Настраиваем окно под предупреждение
+            const nextStep = items.findIndex((_, i) => !readDays.includes(i+1)) + 1;
             document.getElementById('modal-icon').innerText = "⏳";
             document.getElementById('modal-title').innerText = "Не спеши!";
-            document.getElementById('modal-text').innerHTML = `Ты еще не прошел День ${nextStep} ("${nextDayName}").<br>Сначала нужно завершить его, чтобы двигаться дальше!`;
-            
-            // Прячем поле ввода кода
+            document.getElementById('modal-text').innerHTML = `Пройди сначала День ${nextStep}!`;
             document.getElementById('access-code').style.display = 'none';
-            
-            // Кнопка ведет к нужному дню
-            const btn = document.getElementById('btn-main-action');
-            btn.innerText = `Перейти к Дню ${nextStep}`;
-            btn.onclick = () => {
-                closePaywall();
-                // Логика перехода: если день закрыт - открываем покупку, если открыт - меню
-                const isUnlocked = hasFullAccess || unlockedDays.includes(nextStep);
-                if (isUnlocked) {
-                    openDayMenu(nextStep, nextDayName);
-                } else {
-                    showPaywall(nextStep);
-                }
-            };
-            
             document.getElementById('btn-secondary-action').style.display = 'none';
+            
+            const btn = document.getElementById('btn-main-action');
+            btn.innerText = "Хорошо";
+            btn.onclick = closePaywall;
+            
             document.getElementById('paywall-modal').style.display = 'flex';
         }
         
-        // Окно покупки
         function showPaywall(dayNum) {
             targetDayToUnlock = dayNum;
-            
             document.getElementById('modal-icon').innerText = "🔒";
-            document.getElementById('modal-title').innerText = `Открыть День ${dayNum}?`;
-            document.getElementById('modal-text').innerText = "Введи волшебный код, чтобы разблокировать эту главу.";
+            document.getElementById('modal-title').innerText = `Открыть День ${dayNum}`;
+            document.getElementById('modal-text').innerText = "Введи код доступа:";
+            document.getElementById('access-code').style.display = 'block';
+            document.getElementById('access-code').value = '';
+            document.getElementById('btn-secondary-action').style.display = 'block';
             
-            // Показываем поле ввода
-            const input = document.getElementById('access-code');
-            input.style.display = 'block';
-            input.value = '';
-            
-            // Кнопка проверки
             const btn = document.getElementById('btn-main-action');
-            btn.innerText = "✨ Активировать код";
+            btn.innerText = "✨ Активировать";
             btn.onclick = checkCode;
             
-            document.getElementById('btn-secondary-action').style.display = 'block';
             document.getElementById('paywall-modal').style.display = 'flex';
         }
 
-        function closePaywall() {
+        // --- ЛОГИКА СПЕЦПРЕДЛОЖЕНИЯ (ТАЙМЕР) ---
+        function openSpecialOffer() {
+            // Закрываем окно ввода кода
             document.getElementById('paywall-modal').style.display = 'none';
-            targetDayToUnlock = null;
+            document.getElementById('offer-modal').style.display = 'flex';
+
+            // Проверяем, когда пользователь первый раз открыл акцию
+            let startTime = localStorage.getItem('elli_offer_start');
+            
+            if (!startTime) {
+                // Если первый раз — засекаем время
+                startTime = Date.now();
+                localStorage.setItem('elli_offer_start', startTime);
+            }
+
+            updateTimerUI(startTime);
+            
+            // Запускаем обновление каждую секунду
+            if (offerInterval) clearInterval(offerInterval);
+            offerInterval = setInterval(() => updateTimerUI(startTime), 1000);
         }
 
-        function contactSupport() {
-            window.open('https://t.me/твое_имя', '_blank'); // ЗАМЕНИ НА СВОЙ КОНТАКТ
+        function updateTimerUI(startTime) {
+            const now = Date.now();
+            const elapsed = now - parseInt(startTime);
+            const remaining = OFFER_DURATION - elapsed;
+
+            if (remaining > 0) {
+                // Таймер идет
+                document.getElementById('offer-content-active').style.display = 'block';
+                document.getElementById('offer-content-expired').style.display = 'none';
+                
+                // Форматируем время ММ:СС
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                document.getElementById('timer-display').innerText = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                // Время вышло
+                clearInterval(offerInterval);
+                document.getElementById('offer-content-active').style.display = 'none';
+                document.getElementById('offer-content-expired').style.display = 'block';
+            }
         }
+
+        function goToTelegram(isDiscount) {
+            // Формируем разные ссылки
+            const baseUrl = "https://t.me/golokagid";
+            let text = "";
+            
+            if (isDiscount) {
+                text = "Здравствуйте! Хочу купить доступ со скидкой 90% (Таймер активен)";
+            } else {
+                text = "Здравствуйте! Хочу купить доступ (Полная цена)";
+            }
+            
+            // Кодируем текст для ссылки
+            const url = `${baseUrl}?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        function closeOffer() {
+            document.getElementById('offer-modal').style.display = 'none';
+            clearInterval(offerInterval);
+        }
+        
+        function resetTimer() {
+            localStorage.removeItem('elli_offer_start');
+            alert("Таймер сброшен! Нажми 'Написать Фее' снова.");
+            closeOffer();
+        }
+
+        // --- КОДЫ И ДОСТУПЫ (Остальное без изменений) ---
+        function closePaywall() { document.getElementById('paywall-modal').style.display = 'none'; targetDayToUnlock = null; }
 
         async function checkCode() {
             const input = document.getElementById('access-code');
             const code = input.value.trim().toUpperCase();
-            
-            if (!code) { alert("Пожалуйста, введи код!"); return; }
-
+            if (!code) { alert("Введи код!"); return; }
             try {
                 const res = await fetch('codes.json');
-                if (!res.ok) throw new Error("Нет файла кодов");
                 const codes = await res.json();
-
                 if (codes[code]) {
-                    const type = codes[code];
-                    if (type === 'full') activateFullAccess();
-                    else if (type == targetDayToUnlock) activateSingleDay(targetDayToUnlock);
-                    else alert("Этот код от другого дня! 🧐");
-                } else {
-                    alert("Неверный код 😔");
-                }
-            } catch (e) {
-                console.error(e);
-                alert("Ошибка проверки. Проверь интернет.");
-            }
+                    if (codes[code] === 'full') activateFullAccess();
+                    else if (codes[code] == targetDayToUnlock) activateSingleDay(targetDayToUnlock);
+                    else alert("Код от другого дня!");
+                } else alert("Неверный код 😔");
+            } catch (e) { alert("Ошибка проверки кода"); }
         }
 
         function activateSingleDay(day) {
-            if (!unlockedDays.includes(day)) {
-                unlockedDays.push(day);
-                localStorage.setItem('elli_access', JSON.stringify(unlockedDays));
-            }
-            alert("✨ День открыт!");
-            closePaywall();
-            renderGrid();
-            openDayMenu(day, items[day-1].n);
+            if (!unlockedDays.includes(day)) { unlockedDays.push(day); localStorage.setItem('elli_access', JSON.stringify(unlockedDays)); }
+            alert("✨ День открыт!"); closePaywall(); renderGrid(); openDayMenu(day, items[day-1].n);
         }
 
         function activateFullAccess() {
-            hasFullAccess = true;
-            localStorage.setItem('elli_full_access', JSON.stringify(true));
-            alert("✨ Все дни открыты!");
-            closePaywall();
-            renderGrid();
+            hasFullAccess = true; localStorage.setItem('elli_full_access', JSON.stringify(true));
+            alert("✨ Все дни открыты!"); closePaywall(); renderGrid();
         }
 
-        function resetApp() {
-            if(confirm("Сбросить прогресс?")) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-
-        // --- 3. НАВИГАЦИЯ И КОНТЕНТ (БЕЗ ИЗМЕНЕНИЙ) ---
+        // --- НАВИГАЦИЯ ---
         function openDayMenu(num, name) {
-            currentDayNum = num;
-            switchView('view-menu');
+            currentDayNum = num; switchView('view-menu');
             document.getElementById('menu-title').innerText = `День ${num}: ${name}`;
-            if (!readDays.includes(num)) {
-                readDays.push(num);
-                localStorage.setItem('elli_progress', JSON.stringify(readDays));
-                renderGrid();
-            }
+            if (!readDays.includes(num)) { readDays.push(num); localStorage.setItem('elli_progress', JSON.stringify(readDays)); renderGrid(); }
         }
 
         async function openContent(type) {
-            switchView('view-content');
-            stopScroll(); 
+            switchView('view-content'); stopScroll(); 
             const container = document.getElementById('scroll-box'); container.scrollTop = 0;
-            const titleLabel = document.getElementById('header-title');
-            
             const videoArea = document.getElementById('video-area'); const videoPlayer = document.getElementById('video-player');
             const textBox = document.getElementById('text-box'); const textDisplay = document.getElementById('text-display');
             const audioBox = document.getElementById('audio-box'); const audioPlayer = document.getElementById('audio-player');
-            const audioTitle = document.getElementById('audio-title'); const mainImage = document.getElementById('main-image');
-            const scrollBtn = document.getElementById('scroll-btn');
+            const mainImage = document.getElementById('main-image'); const scrollBtn = document.getElementById('scroll-btn');
 
             videoPlayer.pause(); audioPlayer.pause();
-            videoArea.style.display = 'none'; textBox.style.display = 'none';
-            audioBox.style.display = 'none'; mainImage.style.display = 'none';
-            scrollBtn.classList.remove('visible'); textDisplay.innerHTML = ""; 
+            videoArea.style.display = 'none'; textBox.style.display = 'none'; audioBox.style.display = 'none'; mainImage.style.display = 'none'; scrollBtn.classList.remove('visible'); textDisplay.innerHTML = ""; 
 
             if (type === 'story') {
-                titleLabel.innerText = "📖 История";
+                document.getElementById('header-title').innerText = "📖 История";
                 await loadTextContent(`texts/day${currentDayNum}_story.html`);
-                audioBox.style.display = 'block'; audioTitle.innerText = "🎧 Слушать сказку";
+                audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать сказку";
                 audioPlayer.src = `audio/day${currentDayNum}_story.mp3`; scrollBtn.classList.add('visible');
             } else if (type === 'video') {
-                titleLabel.innerText = "🎬 Видео";
+                document.getElementById('header-title').innerText = "🎬 Видео";
                 videoArea.style.display = 'block'; videoPlayer.src = `videos/day${currentDayNum}.mp4`;
             } else if (type === 'song') {
-                titleLabel.innerText = "🎵 Песенка";
+                document.getElementById('header-title').innerText = "🎵 Песенка";
                 mainImage.src = `images/day${currentDayNum}.jpg`; mainImage.style.display = 'block';
-                audioBox.style.display = 'block'; audioTitle.innerText = "🎧 Слушать песенку";
+                audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать песенку";
                 audioPlayer.src = `audio/day${currentDayNum}_song.mp3`;
             } else if (type === 'child') {
-                titleLabel.innerText = "👶 Практика (Дети)";
+                document.getElementById('header-title').innerText = "👶 Практика (Дети)";
                 await loadTextContent(`texts/day${currentDayNum}_child.html`);
-                audioBox.style.display = 'block'; audioTitle.innerText = "🎧 Слушать практику";
+                audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать практику";
                 audioPlayer.src = `audio/day${currentDayNum}_child.mp3`; scrollBtn.classList.add('visible');
             } else if (type === 'adult') {
-                titleLabel.innerText = "🧘‍♀️ Практика (Взр)";
+                document.getElementById('header-title').innerText = "🧘‍♀️ Практика (Взр)";
                 await loadTextContent(`texts/day${currentDayNum}_adult.html`);
-                audioBox.style.display = 'block'; audioTitle.innerText = "🎧 Слушать практику";
+                audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать практику";
                 audioPlayer.src = `audio/day${currentDayNum}_adult.mp3`; scrollBtn.classList.add('visible');
             }
             if (audioBox.style.display === 'block') audioPlayer.load();
@@ -320,15 +327,10 @@
         async function loadTextContent(filePath) {
             try {
                 const res = await fetch(filePath);
-                const textBox = document.getElementById('text-box');
-                const textDisplay = document.getElementById('text-display');
                 if (res.ok) {
                     let text = await res.text();
-                    textDisplay.innerHTML = formatText(text, currentDayNum);
-                    textBox.style.display = 'block';
-                } else {
-                    textDisplay.innerHTML = "<p style='text-align:center'>Текст скоро появится...</p>";
-                    textBox.style.display = 'block';
+                    document.getElementById('text-display').innerHTML = formatText(text, currentDayNum);
+                    document.getElementById('text-box').style.display = 'block';
                 }
             } catch (e) {}
         }
@@ -340,8 +342,8 @@
             html = html.replace(/\[GIF(\d*)\]/g, (match, p1) => { const suffix = p1 ? `_${p1}` : ''; return `<img src="images/day${dayNum}${suffix}.gif" class="book-media" onerror="this.style.display='none'">`; });
             return html;
         }
-        function goBackToMenu() { stopScroll(); document.getElementById('audio-player').pause(); document.getElementById('video-player').pause(); switchView('view-menu'); }
-        function goHome() { stopScroll(); document.getElementById('audio-player').pause(); document.getElementById('video-player').pause(); switchView('view-grid'); }
+        function goBackToMenu() { document.getElementById('audio-player').pause(); document.getElementById('video-player').pause(); switchView('view-menu'); }
+        function goHome() { document.getElementById('audio-player').pause(); document.getElementById('video-player').pause(); switchView('view-grid'); }
         function toggleAutoScroll() {
             const container = document.getElementById('scroll-box'); const btn = document.getElementById('scroll-btn');
             if (isScrolling) { clearInterval(scrollInterval); btn.classList.remove('active'); }
@@ -349,6 +351,7 @@
             isScrolling = !isScrolling;
         }
         function stopScroll() { clearInterval(scrollInterval); isScrolling = false; const btn = document.getElementById('scroll-btn'); if(btn) btn.classList.remove('active'); }
+
         const tg = window.Telegram.WebApp; tg.ready(); tg.expand(); tg.setHeaderColor('#fdfbf7'); tg.setBackgroundColor('#fdfbf7');
         tg.BackButton.onClick(() => { if (document.getElementById('view-menu').classList.contains('active-view')) goHome(); else if (document.getElementById('view-content').classList.contains('active-view')) goBackToMenu(); });
         setInterval(() => { if (document.getElementById('view-grid').classList.contains('active-view')) tg.BackButton.hide(); else tg.BackButton.show(); }, 200);
