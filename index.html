@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Мир Элли</title>
-    
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Lora:ital,wght@0,400;1,500&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="style.css">
-
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -29,7 +26,6 @@
             <input type="text" id="access-code" class="code-input" placeholder="Код доступа" oninput="this.value = this.value.toUpperCase()">
             
             <button class="btn-buy btn-primary" id="btn-main-action" onclick="checkCode()">✨ Активировать</button>
-            
             <button class="btn-buy btn-secondary" id="btn-secondary-action" onclick="openSpecialOffer()">💬 Получить код (Написать Фее)</button>
         </div>
     </div>
@@ -41,7 +37,7 @@
             <div id="offer-content-active" style="display:none;">
                 <div class="modal-icon">🎁</div>
                 <div class="modal-title">Секретное предложение!</div>
-                <div class="offer-text-highlight">Скидка 90% на полный доступ!</div>
+                <div class="offer-text-highlight">Скидка 90% на ПОЛНЫЙ доступ!</div>
                 
                 <div class="price-container">
                     <span class="old-price">1000 ₽</span>
@@ -49,7 +45,7 @@
                     <span class="new-price">100 ₽</span>
                 </div>
 
-                <div class="modal-text">У тебя есть время, чтобы забрать волшебный код по специальной цене.</div>
+                <div class="modal-text">У тебя есть время, чтобы забрать волшебный код ко всем дням сразу.</div>
                 
                 <div id="timer-display" class="timer-display">15:00</div>
                 
@@ -57,11 +53,11 @@
             </div>
 
             <div id="offer-content-expired" style="display:none;">
-                <div class="modal-icon">⌛</div>
-                <div class="modal-title">Время вышло</div>
-                <div class="modal-text">К сожалению, секретный таймер истек.<br>Но ты все равно можешь приобрести доступ к сказке.</div>
+                <div class="modal-icon">✨</div>
+                <div class="modal-title">Доступ к сказке</div>
+                <div class="modal-text">Время действия спецпредложения истекло.<br>Но вы можете приобрести доступ к выбранному дню.</div>
                 
-                <button class="btn-buy btn-primary" onclick="goToTelegram(false)">Купить доступ</button>
+                <button class="btn-buy btn-primary" onclick="goToTelegram(false)">Приобрести доступ</button>
             </div>
         </div>
     </div>
@@ -116,9 +112,8 @@
         let targetDayToUnlock = null;
         
         let offerInterval;
-        const OFFER_DURATION = 15 * 60 * 1000; // 15 минут
+        const OFFER_DURATION = 15 * 60 * 1000;
 
-        // --- 1. СЕТКА ---
         function renderGrid() {
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
@@ -152,8 +147,6 @@
         }
         renderGrid();
 
-        // --- 2. ЛОГИКА ОКОН И ТАЙМЕРА ---
-
         function showFutureWarning() {
             const nextStep = items.findIndex((_, i) => !readDays.includes(i+1)) + 1;
             document.getElementById('modal-icon').innerText = "⏳";
@@ -165,7 +158,6 @@
             const btn = document.getElementById('btn-main-action');
             btn.innerText = "Хорошо";
             btn.onclick = closePaywall;
-            
             document.getElementById('paywall-modal').style.display = 'flex';
         }
         
@@ -181,22 +173,19 @@
             const btn = document.getElementById('btn-main-action');
             btn.innerText = "✨ Активировать";
             btn.onclick = checkCode;
-            
             document.getElementById('paywall-modal').style.display = 'flex';
         }
 
-        // --- ЛОГИКА ТАЙМЕРА ---
+        // --- ЛОГИКА ТАЙМЕРА И ССЫЛОК ---
         function openSpecialOffer() {
             document.getElementById('paywall-modal').style.display = 'none';
             document.getElementById('offer-modal').style.display = 'flex';
 
             let startTime = localStorage.getItem('elli_offer_start');
-            
             if (!startTime) {
                 startTime = Date.now();
                 localStorage.setItem('elli_offer_start', startTime);
             }
-
             updateTimerUI(startTime);
             if (offerInterval) clearInterval(offerInterval);
             offerInterval = setInterval(() => updateTimerUI(startTime), 1000);
@@ -224,20 +213,28 @@
 
         function goToTelegram(isDiscount) {
             const baseUrl = "https://t.me/golokagid";
-            let text = isDiscount ? "Здравствуйте! Хочу купить доступ со скидкой 90% (Таймер активен)" : "Здравствуйте! Хочу купить доступ (Полная цена)";
+            let text = "";
+            
+            if (isDiscount) {
+                // Если скидка - то это на полный доступ
+                text = "Здравствуйте! Хочу купить ПОЛНЫЙ доступ ко всем дням со скидкой 90% (Таймер активен).";
+            } else {
+                // Если таймер истек - то это покупка конкретного дня, который юзер пытался открыть
+                let dayContext = targetDayToUnlock ? `к Дню ${targetDayToUnlock}` : "";
+                text = `Здравствуйте! Хочу купить доступ ${dayContext}.`;
+            }
+            
             window.open(`${baseUrl}?text=${encodeURIComponent(text)}`, '_blank');
         }
 
         function closeOffer() {
             document.getElementById('offer-modal').style.display = 'none';
-            // Не сбрасываем localStorage, таймер продолжает тикать в фоне
             clearInterval(offerInterval); 
         }
         
         function resetTimer() {
             localStorage.removeItem('elli_offer_start');
-            alert("Таймер сброшен!");
-            closeOffer();
+            alert("Таймер сброшен!"); closeOffer();
         }
 
         function closePaywall() { document.getElementById('paywall-modal').style.display = 'none'; targetDayToUnlock = null; }
@@ -268,14 +265,11 @@
         }
 
         function resetApp() { if(confirm("Сбросить?")) { localStorage.clear(); location.reload(); } }
-
-        // --- НАВИГАЦИЯ ---
         function openDayMenu(num, name) {
             currentDayNum = num; switchView('view-menu');
             document.getElementById('menu-title').innerText = `День ${num}: ${name}`;
             if (!readDays.includes(num)) { readDays.push(num); localStorage.setItem('elli_progress', JSON.stringify(readDays)); renderGrid(); }
         }
-
         async function openContent(type) {
             switchView('view-content'); stopScroll(); 
             const container = document.getElementById('scroll-box'); container.scrollTop = 0;
@@ -324,7 +318,6 @@
                 }
             } catch (e) {}
         }
-
         function switchView(viewId) { document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view')); document.getElementById(viewId).classList.add('active-view'); }
         function formatText(text, dayNum) {
             if (!text) return "";
@@ -341,7 +334,6 @@
             isScrolling = !isScrolling;
         }
         function stopScroll() { clearInterval(scrollInterval); isScrolling = false; const btn = document.getElementById('scroll-btn'); if(btn) btn.classList.remove('active'); }
-
         const tg = window.Telegram.WebApp; tg.ready(); tg.expand(); tg.setHeaderColor('#fdfbf7'); tg.setBackgroundColor('#fdfbf7');
         tg.BackButton.onClick(() => { if (document.getElementById('view-menu').classList.contains('active-view')) goHome(); else if (document.getElementById('view-content').classList.contains('active-view')) goBackToMenu(); });
         setInterval(() => { if (document.getElementById('view-grid').classList.contains('active-view')) tg.BackButton.hide(); else tg.BackButton.show(); }, 200);
