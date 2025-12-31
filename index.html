@@ -19,7 +19,6 @@
     <div id="paywall-modal" class="modal-overlay">
         <div class="modal-card">
             <button class="btn-close" onclick="closePaywall()">✖</button>
-            
             <div class="modal-icon" id="modal-icon">🔒</div>
             <div class="modal-title" id="modal-title">День закрыт</div>
             <div class="modal-text" id="modal-text">Введи код доступа.</div>
@@ -155,6 +154,7 @@
         let offerInterval;
         const OFFER_DURATION = 15 * 60 * 1000;
 
+        // --- ГЛАВНАЯ СЕТКА ---
         function renderGrid() {
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
@@ -188,6 +188,7 @@
         }
         renderGrid();
 
+        // --- ЛОГИКА ОКОН ---
         function showFutureWarning() {
             const nextStep = items.findIndex((_, i) => !readDays.includes(i+1)) + 1;
             document.getElementById('modal-icon').innerText = "⏳";
@@ -197,7 +198,7 @@
             document.getElementById('btn-secondary-action').style.display = 'none';
             const btn = document.getElementById('btn-main-action');
             btn.innerText = "Хорошо"; 
-            // Здесь закрытие ведет просто к закрытию, так как это не отказ от покупки
+            // Просто закрываем, не предлагаем донат, так как это не отказ от покупки
             btn.onclick = () => { document.getElementById('paywall-modal').style.display = 'none'; }; 
             document.getElementById('paywall-modal').style.display = 'flex';
         }
@@ -215,7 +216,6 @@
             document.getElementById('paywall-modal').style.display = 'flex';
         }
 
-        // --- ЛОГИКА ТАЙМЕРА И ОКОН ---
         function openSpecialOffer() {
             document.getElementById('paywall-modal').style.display = 'none';
             document.getElementById('offer-modal').style.display = 'flex';
@@ -273,6 +273,7 @@
             window.open(`${baseUrl}?text=${encodeURIComponent(text)}`, '_blank');
         }
 
+        // --- ЛОГИКА ЗАКРЫТИЯ И ДОНАТА ---
         function closeOffer() {
             document.getElementById('offer-modal').style.display = 'none';
             clearInterval(offerInterval); 
@@ -281,14 +282,13 @@
 
         function closePaywall() {
              document.getElementById('paywall-modal').style.display = 'none';
-             // Если это не окно "Не спеши" (где мы просто закрываем), а окно покупки - открываем донат
+             // Если окно было открыто для покупки (targetDayToUnlock задан), открываем донат
              if (targetDayToUnlock) {
                  openDonateModal();
              }
              targetDayToUnlock = null;
         }
 
-        // --- ЛОГИКА ДОНАТА ---
         function openDonateModal() {
             document.getElementById('donate-step-1').style.display = 'block';
             document.getElementById('donate-step-2').style.display = 'none';
@@ -300,8 +300,9 @@
             document.getElementById('donate-step-2').style.display = 'block';
         }
 
+        // --- СИСТЕМНЫЕ ФУНКЦИИ ---
         function resetTimer() { localStorage.removeItem('elli_offer_start'); alert("Таймер сброшен!"); closeOffer(); }
-
+        
         async function checkCode() {
             const input = document.getElementById('access-code');
             const code = input.value.trim().toUpperCase();
@@ -337,6 +338,8 @@
             document.getElementById('menu-title').innerText = `День ${num}: ${name}`;
             if (!readDays.includes(num)) { readDays.push(num); localStorage.setItem('elli_progress', JSON.stringify(readDays)); renderGrid(); }
         }
+
+        // --- ОТКРЫТИЕ КОНТЕНТА (С ЗАЩИТОЙ ОТ ОШИБОК) ---
         async function openContent(type) {
             switchView('view-content'); stopScroll(); 
             const container = document.getElementById('scroll-box'); container.scrollTop = 0;
@@ -345,46 +348,63 @@
             const audioBox = document.getElementById('audio-box'); const audioPlayer = document.getElementById('audio-player');
             const mainImage = document.getElementById('main-image'); const scrollBtn = document.getElementById('scroll-btn');
 
+            // Сброс всего
             videoPlayer.pause(); audioPlayer.pause();
             videoArea.style.display = 'none'; textBox.style.display = 'none'; audioBox.style.display = 'none'; mainImage.style.display = 'none'; scrollBtn.classList.remove('visible'); textDisplay.innerHTML = ""; 
 
-            if (type === 'story') {
-                document.getElementById('header-title').innerText = "📖 История";
-                await loadTextContent(`texts/day${currentDayNum}_story.html`);
-                audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать сказку";
-                audioPlayer.src = `audio/day${currentDayNum}_story.mp3`; scrollBtn.classList.add('visible');
-            } else if (type === 'video') {
-                document.getElementById('header-title').innerText = "🎬 Видео";
-                videoArea.style.display = 'block'; videoPlayer.src = `videos/day${currentDayNum}.mp4`;
-            } else if (type === 'song') {
-                document.getElementById('header-title').innerText = "🎵 Песенка";
-                mainImage.src = `images/day${currentDayNum}.jpg`; mainImage.style.display = 'block';
-                audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать песенку";
-                audioPlayer.src = `audio/day${currentDayNum}_song.mp3`;
-            } else if (type === 'child') {
-                document.getElementById('header-title').innerText = "👶 Практика (Дети)";
-                await loadTextContent(`texts/day${currentDayNum}_child.html`);
-                audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать практику";
-                audioPlayer.src = `audio/day${currentDayNum}_child.mp3`; scrollBtn.classList.add('visible');
-            } else if (type === 'adult') {
-                document.getElementById('header-title').innerText = "🧘‍♀️ Практика (Взр)";
-                await loadTextContent(`texts/day${currentDayNum}_adult.html`);
-                audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать практику";
-                audioPlayer.src = `audio/day${currentDayNum}_adult.mp3`; scrollBtn.classList.add('visible');
+            try {
+                if (type === 'story') {
+                    document.getElementById('header-title').innerText = "📖 История";
+                    await loadTextContent(`texts/day${currentDayNum}_story.html`);
+                    audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать сказку";
+                    audioPlayer.src = `audio/day${currentDayNum}_story.mp3`; scrollBtn.classList.add('visible');
+                } else if (type === 'video') {
+                    document.getElementById('header-title').innerText = "🎬 Видео";
+                    videoArea.style.display = 'block'; videoPlayer.src = `videos/day${currentDayNum}.mp4`;
+                } else if (type === 'song') {
+                    document.getElementById('header-title').innerText = "🎵 Песенка";
+                    mainImage.src = `images/day${currentDayNum}.jpg`; mainImage.style.display = 'block';
+                    audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать песенку";
+                    audioPlayer.src = `audio/day${currentDayNum}_song.mp3`;
+                } else if (type === 'child') {
+                    document.getElementById('header-title').innerText = "👶 Практика (Дети)";
+                    await loadTextContent(`texts/day${currentDayNum}_child.html`);
+                    audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать практику";
+                    audioPlayer.src = `audio/day${currentDayNum}_child.mp3`; scrollBtn.classList.add('visible');
+                } else if (type === 'adult') {
+                    document.getElementById('header-title').innerText = "🧘‍♀️ Практика (Взр)";
+                    await loadTextContent(`texts/day${currentDayNum}_adult.html`);
+                    audioBox.style.display = 'block'; document.getElementById('audio-title').innerText = "🎧 Слушать практику";
+                    audioPlayer.src = `audio/day${currentDayNum}_adult.mp3`; scrollBtn.classList.add('visible');
+                }
+                
+                // Перезагрузка плеера, чтобы подхватил новый файл
+                if (audioBox.style.display === 'block') audioPlayer.load();
+
+            } catch (err) {
+                console.error("Ошибка открытия контента:", err);
             }
-            if (audioBox.style.display === 'block') audioPlayer.load();
         }
 
         async function loadTextContent(filePath) {
+            const textBox = document.getElementById('text-box');
+            const textDisplay = document.getElementById('text-display');
             try {
                 const res = await fetch(filePath);
                 if (res.ok) {
                     let text = await res.text();
-                    document.getElementById('text-display').innerHTML = formatText(text, currentDayNum);
-                    document.getElementById('text-box').style.display = 'block';
+                    textDisplay.innerHTML = formatText(text, currentDayNum);
+                    textBox.style.display = 'block';
+                } else {
+                    textDisplay.innerHTML = "<p style='text-align:center; padding:20px;'>Текст пока не добавлен 😔</p>";
+                    textBox.style.display = 'block';
                 }
-            } catch (e) {}
+            } catch (e) {
+                textDisplay.innerHTML = "<p style='text-align:center'>Ошибка загрузки</p>";
+                textBox.style.display = 'block';
+            }
         }
+
         function switchView(viewId) { document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view')); document.getElementById(viewId).classList.add('active-view'); }
         function formatText(text, dayNum) {
             if (!text) return "";
