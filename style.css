@@ -1,4 +1,4 @@
-/* style.css */
+/* style.css - Финальная версия */
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -162,9 +162,8 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
     background: #fff0f3; border-color: #ffb8c6; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.1);
 }
 .pricing-card.full-price {
-    background: #eef2f3; border-color: #d1d8dd; /* Стиль для полной цены */
+    background: #eef2f3; border-color: #d1d8dd; 
 }
-
 .offer-label-highlight { font-size: 14px; color: #ff4757; font-weight: bold; margin-bottom: 2px; }
 .offer-label-normal { font-size: 14px; color: #483D8B; font-weight: bold; margin-bottom: 2px; }
 .price-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 5px 0 10px 0; }
