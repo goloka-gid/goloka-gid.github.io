@@ -167,30 +167,25 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
 }
 .modal-card {
     background: white; width: 90%; max-width: 350px;
-    border-radius: 24px; padding: 35px 25px 25px 25px; /* Сверху больше места под крестик */
+    border-radius: 24px; padding: 35px 20px 20px 20px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    position: relative; /* Чтобы крестик позиционировался относительно карты */
+    position: relative;
+    max-height: 85vh; /* Чтобы на маленьких экранах влезало */
+    overflow-y: auto;
 }
-.modal-icon { font-size: 40px; margin-bottom: 10px; animation: float 3s infinite; }
-.modal-title { font-size: 18px; font-weight: bold; color: var(--accent); margin-bottom: 10px; }
-.modal-text { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.4; }
 
-/* КРЕСТИК ЗАКРЫТИЯ (ИСПРАВЛЕННЫЙ) */
+.modal-icon { font-size: 30px; margin-bottom: 5px; animation: float 3s infinite; }
+.modal-title { font-size: 18px; font-weight: bold; color: var(--accent); margin-bottom: 10px; }
+.modal-text { font-size: 13px; color: #666; margin-bottom: 15px; line-height: 1.4; }
+
+/* КРЕСТИК ЗАКРЫТИЯ */
 .btn-close {
-    position: absolute;
-    top: 10px; 
-    right: 10px; 
-    background: #f0f0f0; 
-    border-radius: 50%;
-    width: 32px; height: 32px;
-    border: none;
-    font-size: 18px;
-    line-height: 1;
-    cursor: pointer;
-    color: #555;
-    z-index: 100;
-    display: flex; align-items: center; justify-content: center;
+    position: absolute; top: 10px; right: 10px; 
+    background: #f0f0f0; border-radius: 50%;
+    width: 32px; height: 32px; border: none;
+    font-size: 18px; line-height: 1; cursor: pointer; color: #555;
+    z-index: 100; display: flex; align-items: center; justify-content: center;
     transition: 0.2s;
 }
 .btn-close:hover { background: #e0e0e0; }
@@ -204,8 +199,8 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
 
 .btn-buy {
     width: 100%; padding: 15px; border: none; border-radius: 15px;
-    font-family: 'Comfortaa'; font-weight: bold; font-size: 14px;
-    cursor: pointer; margin-bottom: 10px; transition: 0.2s;
+    font-family: 'Comfortaa'; font-weight: bold; font-size: 13px;
+    cursor: pointer; margin-bottom: 5px; transition: 0.2s;
 }
 .btn-primary { 
     background: linear-gradient(45deg, #8A2BE2, #9b87f5); color: white; 
@@ -214,21 +209,46 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
 .btn-primary:active { transform: scale(0.97); }
 .btn-secondary { background: #f0f0f0; color: #555; font-size: 12px; }
 
-/* СТИЛИ ТАЙМЕРА И АКЦИИ */
+/* ТАЙМЕР */
 .timer-display {
-    font-size: 32px; font-weight: bold; color: #ff4757;
-    margin: 10px 0; font-family: monospace; letter-spacing: 2px;
+    font-size: 28px; font-weight: bold; color: #ff4757;
+    margin: 5px 0 15px 0; font-family: monospace; letter-spacing: 2px;
 }
-.offer-text-highlight {
-    font-size: 16px; color: #2ed573; font-weight: bold; margin-bottom: 5px;
+
+/* НОВЫЕ БЛОКИ ЦЕН (ОПЦИИ) */
+.pricing-card {
+    background: #f8f9fa;
+    border: 2px solid #eee;
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
 }
-.price-container {
-    display: flex; justify-content: center; align-items: center; gap: 15px;
-    margin: 15px 0; background: #f9f9f9; padding: 10px; border-radius: 15px;
+
+.pricing-card.highlight {
+    background: #fff0f3;
+    border-color: #ffb8c6;
+    box-shadow: 0 4px 10px rgba(255, 71, 87, 0.1);
 }
-.old-price { font-size: 18px; color: #999; text-decoration: line-through; }
-.new-price { font-size: 24px; font-weight: bold; color: #ff4757; animation: pulse 2s infinite; }
+
+.offer-label-highlight {
+    font-size: 14px; color: #ff4757; font-weight: bold; margin-bottom: 2px;
+}
+.offer-label-normal {
+    font-size: 14px; color: #483D8B; font-weight: bold; margin-bottom: 2px;
+}
+
+.price-row {
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+    margin: 5px 0 10px 0;
+}
+.old-price { font-size: 14px; color: #999; text-decoration: line-through; }
+.new-price { font-size: 18px; font-weight: bold; color: #333; }
+.new-price.red { color: #ff4757; font-size: 20px; animation: pulse 2s infinite; }
+
 .btn-discount {
     background: linear-gradient(45deg, #ff6b81, #ff4757); color: white;
-    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); font-weight: bold;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+}
+.btn-normal {
+    background: #6c5ce7; color: white;
 }
