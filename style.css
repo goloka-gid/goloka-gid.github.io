@@ -204,34 +204,68 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
 .btn-close {
     /* ... (весь твой старый код выше) ... */
 
-/* СТИЛИ ДЛЯ ТАЙМЕРА И АКЦИИ */
+/* --- СТИЛИ ДЛЯ ТАЙМЕРА И АКЦИИ (Обновленные) --- */
 .timer-display {
-    font-size: 36px;
+    font-size: 32px;
     font-weight: bold;
-    color: #ff4757; /* Красный цвет тревоги/акции */
-    margin: 15px 0;
-    font-family: monospace; /* Чтобы цифры не скакали */
+    color: #ff4757;
+    margin: 10px 0;
+    font-family: monospace;
     letter-spacing: 2px;
 }
 
 .offer-text-highlight {
     font-size: 16px;
-    color: #2ed573; /* Зеленый цвет успеха */
+    color: #2ed573;
     font-weight: bold;
     margin-bottom: 5px;
+}
+
+/* Блок цен */
+.price-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 15px 0;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 15px;
+}
+
+.old-price {
+    font-size: 18px;
+    color: #999;
+    text-decoration: line-through; /* Зачеркивание */
+}
+
+.new-price {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff4757; /* Яркий цвет */
+    animation: pulse 2s infinite;
 }
 
 .btn-discount {
     background: linear-gradient(45deg, #ff6b81, #ff4757);
     color: white;
     box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
-    animation: pulse 1.5s infinite;
+    font-weight: bold;
 }
 
-.btn-expired {
-    background: #ccc;
-    color: #666;
-    cursor: default;
-}
-    position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #999;
+/* Исправление для крестика, чтобы он точно нажимался */
+.btn-close {
+    position: absolute;
+    top: 15px; 
+    right: 15px; 
+    background: white; /* Фон чтобы было видно */
+    border-radius: 50%;
+    width: 30px; height: 30px;
+    border: 1px solid #eee;
+    font-size: 16px;
+    cursor: pointer;
+    color: #555;
+    z-index: 10; /* Поверх всего */
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
