@@ -66,7 +66,7 @@
 
         /* --- ЭКРАН 2: МЕНЮ ДНЯ --- */
         .menu-container {
-            display: flex; flex-direction: column; gap: 12px; /* Чуть меньше отступ, чтобы влезло 5 кнопок */
+            display: flex; flex-direction: column; gap: 12px;
             max-width: 400px; margin: 5vh auto 0; padding: 20px;
         }
         
@@ -74,7 +74,7 @@
             background: rgba(255, 255, 255, 0.8);
             border: 2px solid white;
             border-radius: 20px;
-            padding: 15px 20px; /* Чуть компактнее */
+            padding: 15px 20px;
             display: flex; align-items: center; gap: 15px;
             font-family: 'Comfortaa', cursive; font-size: 15px; color: var(--text-color);
             box-shadow: 0 5px 15px rgba(138, 43, 226, 0.08);
@@ -83,7 +83,6 @@
         .menu-btn:active { transform: scale(0.97); background: #f0ebff; }
         .menu-icon { font-size: 24px; min-width: 30px; text-align: center; }
         
-        /* Кнопка назад для меню */
         .simple-back {
             background: none; border: none; color: var(--accent);
             font-weight: bold; font-family: 'Comfortaa'; cursor: pointer;
@@ -120,6 +119,8 @@
             font-family: 'Lora', serif; font-size: 18px; line-height: 1.7;
             color: #3a2b5d; white-space: pre-wrap;
         }
+        /* Стили для параграфов внутри загружаемого текста */
+        .magic-text p { margin-bottom: 15px; margin-top: 0; }
 
         .section-box {
             background: rgba(255,255,255,0.5); border-radius: 24px;
@@ -139,7 +140,6 @@
         }
         .video-wrapper video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-        /* Плавающая кнопка скролла */
         .fab-scroll {
             position: fixed; bottom: 30px; right: 20px;
             background: var(--accent); color: white;
@@ -258,13 +258,11 @@
         ];
 
         let currentDayNum = 1;
-        let currentDayName = "";
-        let currentDayData = null;
         let readDays = JSON.parse(localStorage.getItem('elli_progress')) || [];
         let isScrolling = false;
         let scrollInterval;
 
-        // --- 1. ОТРИСОВКА СЕТКИ ---
+        // 1. ОТРИСОВКА СЕТКИ
         function renderGrid() {
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
@@ -284,12 +282,10 @@
         }
         renderGrid();
 
-        // --- 2. ПЕРЕХОД В МЕНЮ ДНЯ ---
-        async function openDayMenu(num, name) {
+        // 2. ОТКРЫТИЕ МЕНЮ
+        function openDayMenu(num, name) {
             currentDayNum = num;
-            currentDayName = name;
-            currentDayData = null; 
-
+            
             switchView('view-menu');
             document.getElementById('menu-title').innerText = `День ${num}: ${name}`;
 
@@ -298,72 +294,49 @@
                 localStorage.setItem('elli_progress', JSON.stringify(readDays));
                 renderGrid();
             }
-
-            try {
-                const res = await fetch(`texts/day${num}.json`);
-                if (res.ok) {
-                    currentDayData = await res.json();
-                } else {
-                    currentDayData = { story: "Текст скоро появится...", child: "...", adult: "..." };
-                }
-            } catch (e) {
-                console.error(e);
-                currentDayData = { story: "Ошибка загрузки :(", child: "", adult: "" };
-            }
         }
 
-        // --- 3. ОТКРЫТИЕ КОНТЕНТА ---
-        function openContent(type) {
-            // Если данные еще не загрузились, но нажали кнопку
-            if (!currentDayData && type !== 'video' && type !== 'song') return; 
-            
+        // 3. ЗАГРУЗКА КОНТЕНТА (ТЕПЕРЬ ЧИТАЕТ .HTML ФАЙЛЫ)
+        async function openContent(type) {
             switchView('view-content');
-            stopScroll(); // Остановить скролл если был
+            stopScroll(); 
 
-            // Ссылки на элементы DOM
+            // Ссылки
             const container = document.getElementById('scroll-box');
             container.scrollTop = 0;
-            
             const titleLabel = document.getElementById('header-title');
             
+            // Зоны контента
             const videoArea = document.getElementById('video-area');
             const videoPlayer = document.getElementById('video-player');
-            
             const textBox = document.getElementById('text-box');
             const textDisplay = document.getElementById('text-display');
-            
             const audioBox = document.getElementById('audio-box');
             const audioPlayer = document.getElementById('audio-player');
             const audioTitle = document.getElementById('audio-title');
-            
             const mainImage = document.getElementById('main-image');
             const scrollBtn = document.getElementById('scroll-btn');
 
-            // СБРОС ВСЕГО
+            // СБРОС
             videoPlayer.pause();
             audioPlayer.pause();
             videoArea.style.display = 'none';
             textBox.style.display = 'none';
             audioBox.style.display = 'none';
             mainImage.style.display = 'none';
-            scrollBtn.classList.remove('visible'); // Спрятать кнопку скролла по умолчанию
+            scrollBtn.classList.remove('visible');
+            textDisplay.innerHTML = ""; // Очистка старого текста
 
-            // ЛОГИКА ОТОБРАЖЕНИЯ ПО ТИПАМ
+            // --- ЛОГИКА ---
             
             // 1. ИСТОРИЯ
             if (type === 'story') {
                 titleLabel.innerText = "📖 История";
+                await loadTextContent(`texts/day${currentDayNum}_story.html`); // Загружаем файл
                 
-                // Текст
-                textBox.style.display = 'block';
-                textDisplay.innerHTML = formatText(currentDayData.story, currentDayNum);
-                
-                // Аудио
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать сказку";
                 audioPlayer.src = `audio/day${currentDayNum}_story.mp3`;
-                
-                // Кнопка скролла нужна
                 scrollBtn.classList.add('visible');
 
             // 2. ВИДЕО
@@ -371,18 +344,13 @@
                 titleLabel.innerText = "🎬 Видео";
                 videoArea.style.display = 'block';
                 videoPlayer.src = `videos/day${currentDayNum}.mp4`;
-                // Видео запускаем сразу (по желанию, можно убрать autoplay если не надо)
-                // videoPlayer.play(); 
 
             // 3. ПЕСНЯ
             } else if (type === 'song') {
                 titleLabel.innerText = "🎵 Песенка";
-                
-                // Показываем главную картинку дня для красоты
                 mainImage.src = `images/day${currentDayNum}.jpg`;
                 mainImage.style.display = 'block';
-
-                // Аудио
+                
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать песенку";
                 audioPlayer.src = `audio/day${currentDayNum}_song.mp3`;
@@ -390,33 +358,48 @@
             // 4. ДЕТИ
             } else if (type === 'child') {
                 titleLabel.innerText = "👶 Практика (Дети)";
-                textBox.style.display = 'block';
-                textDisplay.innerHTML = formatText(currentDayData.child, currentDayNum);
+                await loadTextContent(`texts/day${currentDayNum}_child.html`);
                 
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать практику";
                 audioPlayer.src = `audio/day${currentDayNum}_child.mp3`;
-                
                 scrollBtn.classList.add('visible');
 
             // 5. ВЗРОСЛЫЕ
             } else if (type === 'adult') {
                 titleLabel.innerText = "🧘‍♀️ Практика (Взр)";
-                textBox.style.display = 'block';
-                textDisplay.innerHTML = formatText(currentDayData.adult, currentDayNum);
+                await loadTextContent(`texts/day${currentDayNum}_adult.html`);
                 
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать практику";
                 audioPlayer.src = `audio/day${currentDayNum}_adult.mp3`;
-                
                 scrollBtn.classList.add('visible');
             }
             
-            // Загрузка плеера
             if (audioBox.style.display === 'block') audioPlayer.load();
         }
 
-        // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+        // ФУНКЦИЯ ЗАГРУЗКИ ТЕКСТА ИЗ ФАЙЛА
+        async function loadTextContent(filePath) {
+            const textBox = document.getElementById('text-box');
+            const textDisplay = document.getElementById('text-display');
+            
+            try {
+                const res = await fetch(filePath);
+                if (res.ok) {
+                    let text = await res.text();
+                    textDisplay.innerHTML = formatText(text, currentDayNum);
+                    textBox.style.display = 'block';
+                } else {
+                    textDisplay.innerHTML = "<p style='text-align:center'>Текст скоро появится...</p>";
+                    textBox.style.display = 'block';
+                }
+            } catch (e) {
+                textDisplay.innerHTML = "<p style='text-align:center'>Ошибка загрузки текста :(</p>";
+                textBox.style.display = 'block';
+            }
+        }
+
         function switchView(viewId) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
             document.getElementById(viewId).classList.add('active-view');
@@ -424,8 +407,8 @@
 
         function formatText(text, dayNum) {
             if (!text) return "";
-            let html = text.replace(/\n/g, '<br>');
-            html = html.replace(/\[IMAGE(\d*)\]/g, (match, p1) => {
+            // Обработка картинок
+            let html = text.replace(/\[IMAGE(\d*)\]/g, (match, p1) => {
                 const suffix = p1 ? `_${p1}` : ''; 
                 return `<img src="images/day${dayNum}${suffix}.jpg" class="book-media" onerror="this.style.display='none'">`;
             });
