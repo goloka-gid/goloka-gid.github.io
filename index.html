@@ -12,40 +12,55 @@
 
     <div id="view-grid" class="view-section active-view">
         <h1>✨ Путешествие Элли</h1>
+        <p style="text-align:center; font-size:10px; opacity:0.3;" onclick="resetApp()">[Сброс настроек]</p>
         <div class="grid" id="main-grid"></div>
-        <p style="text-align:center; opacity:0.3; font-size:10px;" onclick="localStorage.clear(); location.reload();">[Сброс]</p>
+    </div>
+
+    <div id="offer-modal" class="modal-overlay">
+        <div class="modal-card">
+            <button class="btn-close" onclick="closeModal()">✖</button>
+            <div style="font-size:40px; margin-bottom:10px">🎁</div>
+            <h3 style="margin:0 0 10px 0">Открыть доступ?</h3>
+            <p style="font-size:13px; color:#666; margin-bottom:20px;">Первые 2 дня бесплатно. Дальше нужно немного волшебства ✨</p>
+            
+            <div class="pricing-card highlight">
+                <div style="font-size:12px; color:#ff4757; font-weight:bold">Скидка 90%</div>
+                <div class="price-row">
+                    <span class="old-price">30000 ₽</span>
+                    <span class="new-price red">3000 ₽</span>
+                </div>
+                <button class="btn-action btn-discount" onclick="buy('full')">Купить ВСЁ сразу</button>
+            </div>
+
+            <div class="pricing-card">
+                <div style="font-size:12px; color:#555">Один день</div>
+                <div class="price-row">
+                    <span class="old-price">1000 ₽</span>
+                    <span class="new-price">100 ₽</span>
+                </div>
+                <button class="btn-action btn-secondary" onclick="buy('day')">Купить этот день</button>
+            </div>
+        </div>
     </div>
 
     <div id="view-menu" class="view-section">
         <button class="simple-back" onclick="goHome()">⬅ К карте дней</button>
         <h2 id="menu-title" style="margin-top: 0;"></h2>
-        
         <div class="menu-container">
-            <div class="menu-btn" onclick="openContent('story')">
-                <span class="menu-icon">📖</span><div><div style="font-weight:bold">Сказочная история</div><div style="font-size:11px; opacity:0.7">Читать и слушать</div></div>
-            </div>
-            <div class="menu-btn" onclick="openContent('video')">
-                <span class="menu-icon">🎬</span><div><div style="font-weight:bold">Смотреть видео</div><div style="font-size:11px; opacity:0.7">Волшебный мультфильм</div></div>
-            </div>
-            <div class="menu-btn" onclick="openContent('song')">
-                <span class="menu-icon">🎵</span><div><div style="font-weight:bold">Песенка дня</div><div style="font-size:11px; opacity:0.7">Танцуй и пой</div></div>
-            </div>
-            <div class="menu-btn" onclick="openContent('child')">
-                <span class="menu-icon">👶</span><div><div style="font-weight:bold">Практика для детей</div><div style="font-size:11px; opacity:0.7">до 15 лет</div></div>
-            </div>
-            <div class="menu-btn" onclick="openContent('adult')">
-                <span class="menu-icon">🧘‍♀️</span><div><div style="font-weight:bold">Взрослая практика</div><div style="font-size:11px; opacity:0.7">Осознанность для тебя</div></div>
-            </div>
+            <div class="menu-btn" onclick="openContent('story')"><span class="menu-icon">📖</span><div><div style="font-weight:bold">Сказочная история</div><div style="font-size:11px; opacity:0.7">Читать и слушать</div></div></div>
+            <div class="menu-btn" onclick="openContent('video')"><span class="menu-icon">🎬</span><div><div style="font-weight:bold">Смотреть видео</div><div style="font-size:11px; opacity:0.7">Волшебный мультфильм</div></div></div>
+            <div class="menu-btn" onclick="openContent('song')"><span class="menu-icon">🎵</span><div><div style="font-weight:bold">Песенка дня</div><div style="font-size:11px; opacity:0.7">Танцуй и пой</div></div></div>
+            <div class="menu-btn" onclick="openContent('child')"><span class="menu-icon">👶</span><div><div style="font-weight:bold">Практика для детей</div><div style="font-size:11px; opacity:0.7">до 15 лет</div></div></div>
+            <div class="menu-btn" onclick="openContent('adult')"><span class="menu-icon">🧘‍♀️</span><div><div style="font-weight:bold">Взрослая практика</div><div style="font-size:11px; opacity:0.7">Осознанность для тебя</div></div></div>
         </div>
     </div>
 
     <div id="view-content" class="view-section">
         <div class="header-fixed">
             <button class="nav-btn" onclick="goHome()">🏠 Дни</button>
-            <span id="header-title" style="font-size:12px; font-weight:bold; max-width: 120px;"></span>
+            <span id="header-title" style="font-size:12px; font-weight:bold; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
             <button class="nav-btn" onclick="goBackToMenu()">🔙 Меню</button>
         </div>
-
         <div class="scroll-wrapper" id="scroll-box">
             <div style="padding: 15px;">
                 <div id="video-area" style="display:none;">
@@ -54,68 +69,20 @@
                         <div class="video-wrapper"><video id="video-player" controls playsinline></video></div>
                     </div>
                 </div>
-
-                <img id="main-image" src="" class="book-media" style="display:none;">
-
-                <div class="section-box" id="text-box" style="display:none;">
-                    <div id="text-display" class="magic-text"></div>
-                </div>
-
-                <div class="section-box" id="audio-box" style="display:none;">
-                    <h3 id="audio-title" style="color: var(--accent); margin-top:0; font-size: 16px;">🎧 Слушать</h3>
-                    <audio id="audio-player" controls></audio>
-                </div>
+                <img id="main-image" src="" class="book-media" style="display:none;" onerror="this.style.display='none'">
+                <div class="section-box" id="text-box" style="display:none;"><div id="text-display" class="magic-text"></div></div>
+                <div class="section-box" id="audio-box" style="display:none;"><h3 id="audio-title" style="color: var(--accent); margin-top:0; font-size: 16px;">🎧 Слушать</h3><audio id="audio-player" controls></audio></div>
             </div>
         </div>
         <button class="fab-scroll" id="scroll-btn" onclick="toggleAutoScroll()">✨</button>
     </div>
 
-    <div id="access-modal" class="modal-overlay">
-        <div class="modal-card">
-            <button class="btn-close" onclick="closeModal()">✖</button>
-            <div class="modal-tabs">
-                <button class="tab-btn active" onclick="switchTab('buy')">Купить</button>
-                <button class="tab-btn" onclick="switchTab('key')">Ввести ключ</button>
-            </div>
-
-            <div id="tab-buy">
-                <div class="price-row">
-                    <span style="font-size:12px;"><b>Полный доступ</b> (Все дни)</span>
-                    <span style="font-weight:bold; color:#8A2BE2">30 000 ₽</span>
-                </div>
-                <button class="btn-action btn-buy" onclick="buy('full')">Купить всё</button>
-                
-                <div class="price-row" style="margin-top:10px;">
-                    <span style="font-size:12px;"><b>Один день</b></span>
-                    <span style="font-weight:bold;">1 000 ₽</span>
-                </div>
-                <button class="btn-action btn-buy" style="background:#888" onclick="buy('day')">Купить этот день</button>
-                
-                <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-                    <input type="text" class="input-field" placeholder="Промокод">
-                    <button class="btn-action" style="background:#eee; color:#333; padding:8px;">Применить</button>
-                </div>
-            </div>
-
-            <div id="tab-key" style="display:none;">
-                <p style="font-size:13px; color:#666">Введите код доступа, полученный в боте:</p>
-                <input type="text" id="key-input" class="input-field" placeholder="Ваш код">
-                <button class="btn-action btn-key" onclick="checkKey()">Открыть доступ</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // --- БАЗОВЫЙ URL (ЧТОБЫ ФАЙЛЫ ВСЕГДА НАХОДИЛИСЬ) ---
-        const BASE_URL = 'https://goloka-gid.github.io/';
-
-        // --- ВШИТЫЙ ТЕКСТ ДЛЯ ДНЯ 1 (ГАРАНТИЯ РАБОТЫ) ---
+        // Вшитый текст для гарантии работы День 1
         const day1_texts = {
-            story: `<p><b>✨ Элли и Волшебная Кисть</b></p><p>В краю, где звёзды спускаются низко-низко, жила девочка по имени Элли...</p><p><i>(Полная история в аудио)</i></p>`,
-            
-            child: `<p style="text-align:center"><b>🎨 День 1. Волшебная Кисть</b></p><p><b>✨ Твоя История</b></p><p>Представь: ты просыпаешься утром, потягиваешься — и вдруг чувствуешь лёгкое тепло в ладони. Ты открываешь глаза и видишь... её! Невидимую для других, но светящуюся для тебя Волшебную Кисть.</p><p><i>«Ты — художник своей жизни. Ты можешь рисовать каждый новый день таким, каким хочешь его видеть».</i></p><p><b>🧘‍♀️ Медитация (5 мин):</b></p><p>Сядь удобно. Вдохни золотистый свет. Представь холст своего дня. Какими красками ты его раскрасишь?</p>`,
-            
-            adult: `<p style="text-align:center"><b>🎨 День 1. Волшебная Кисть (Взрослые)</b></p><p>Ты открываешь глаза утром. На столике записка: <i>«Ты забыл, что можешь создавать. Не вещи — состояния. Вот тебе кисть».</i></p><p><b>🧘 Практика визуализации:</b></p><p>Представь огромный белый холст. Это сегодняшний день. Каким состоянием ты хочешь его наполнить? Спокойствием? Радостью? Решимостью?</p>`
+            story: `<p><b>✨ Элли и Волшебная Кисть</b></p><p>В краю, где звёзды спускаются низко-низко, жила девочка по имени Элли. У неё был секрет. Каждое утро она находила под подушкой новую краску.</p><p>Но однажды краски исчезли. Осталась только одна, прозрачная, как вода. И старая кисточка.</p>`,
+            child: `<p style="text-align: center;"><b>🎨 День 1. Волшебная Кисть</b></p><p><b>✨ Твоя История</b></p><p>Представь: ты просыпаешься утром... (текст загружен)</p>`,
+            adult: `<p style="text-align: center;"><b>🎨 День 1. Волшебная Кисть (Взрослые)</b></p><p><b>✨ Твоя История</b></p><p>Ты открываешь глаза утром... (текст загружен)</p>`
         };
 
         const items = [
@@ -133,12 +100,10 @@
 
         let currentDayNum = 1;
         let readDays = JSON.parse(localStorage.getItem('elli_progress')) || [];
-        // Дни 1 и 2 открыты по умолчанию
         let unlockedDays = JSON.parse(localStorage.getItem('elli_access')) || [1, 2];
-        let hasFullAccess = JSON.parse(localStorage.getItem('elli_full_access')) || false;
         let targetDayToUnlock = null;
 
-        // --- 1. ОТРИСОВКА СЕТКИ ---
+        // --- 1. СЕТКА (С ЗАМКАМИ) ---
         function renderGrid() {
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
@@ -147,16 +112,14 @@
                 const card = document.createElement('div');
                 const isRead = readDays.includes(dayNum);
                 
-                // Проверка доступа: День 1, 2 ИЛИ куплен полный ИЛИ куплен этот день
-                const isUnlocked = (dayNum <= 2) || hasFullAccess || unlockedDays.includes(dayNum);
+                // ЛОГИКА: 1 и 2 открыты всегда
+                const isUnlocked = (dayNum <= 2) || unlockedDays.includes(dayNum);
                 
                 let classes = 'day-card';
                 if (isRead) classes += ' completed';
-                if (!isUnlocked) classes += ' locked'; // Оставил ярким, просто добавим замок
-                
                 card.className = classes;
                 
-                // Рисуем замок, если закрыто
+                // Замок
                 let lockHtml = !isUnlocked ? `<div class="lock-icon">🔒</div>` : '';
                 
                 card.innerHTML = `
@@ -171,138 +134,26 @@
                 } else {
                     card.onclick = () => showModal(dayNum);
                 }
+                
                 grid.appendChild(card);
             });
         }
         renderGrid();
 
-        // --- 2. ЛОГИКА ОТКРЫТИЯ КОНТЕНТА (ПОЛНОСТЬЮ ПЕРЕПИСАНА ДЛЯ НАДЕЖНОСТИ) ---
-        async function openContent(type) {
-            switchView('view-content');
-            stopScroll();
-            
-            // Ссылки на элементы
-            const els = {
-                title: document.getElementById('header-title'),
-                videoArea: document.getElementById('video-area'),
-                videoPlayer: document.getElementById('video-player'),
-                textBox: document.getElementById('text-box'),
-                textDisplay: document.getElementById('text-display'),
-                audioBox: document.getElementById('audio-box'),
-                audioPlayer: document.getElementById('audio-player'),
-                audioTitle: document.getElementById('audio-title'),
-                mainImage: document.getElementById('main-image'),
-                scrollBtn: document.getElementById('scroll-btn')
-            };
-
-            // СБРОС ВСЕГО
-            els.videoPlayer.pause();
-            els.audioPlayer.pause();
-            els.videoArea.style.display = 'none';
-            els.textBox.style.display = 'none';
-            els.audioBox.style.display = 'none';
-            els.mainImage.style.display = 'none';
-            els.scrollBtn.classList.remove('visible');
-            els.textDisplay.innerHTML = "";
-
-            // ЛОГИКА ДЛЯ ДНЯ 1 (Берем вшитый текст + полные ссылки)
-            if (currentDayNum === 1) {
-                if (type === 'story') {
-                    els.title.innerText = "📖 История";
-                    els.textDisplay.innerHTML = day1_texts.story; // Вшитый текст
-                    els.textBox.style.display = 'block';
-                    
-                    els.audioBox.style.display = 'block';
-                    els.audioTitle.innerText = "🎧 Слушать сказку";
-                    els.audioPlayer.src = BASE_URL + "audio/day1_story.mp3"; // Полная ссылка
-                    els.scrollBtn.classList.add('visible');
-
-                } else if (type === 'video') {
-                    els.title.innerText = "🎬 Видео";
-                    els.videoArea.style.display = 'block';
-                    els.videoPlayer.src = BASE_URL + "videos/day1.mp4"; // Полная ссылка
-
-                } else if (type === 'song') {
-                    els.title.innerText = "🎵 Песенка";
-                    els.mainImage.src = BASE_URL + "images/day1.jpg";
-                    els.mainImage.style.display = 'block';
-                    els.audioBox.style.display = 'block';
-                    els.audioTitle.innerText = "🎧 Слушать песенку";
-                    els.audioPlayer.src = BASE_URL + "audio/day1_song.mp3";
-
-                } else if (type === 'child') {
-                    els.title.innerText = "👶 Практика (Дети)";
-                    els.textDisplay.innerHTML = day1_texts.child; // Вшитый текст
-                    els.textBox.style.display = 'block';
-                    els.audioBox.style.display = 'block';
-                    els.audioTitle.innerText = "🎧 Слушать практику";
-                    els.audioPlayer.src = BASE_URL + "audio/day1_child.mp3";
-                    els.scrollBtn.classList.add('visible');
-
-                } else if (type === 'adult') {
-                    els.title.innerText = "🧘‍♀️ Практика (Взр)";
-                    els.textDisplay.innerHTML = day1_texts.adult; // Вшитый текст
-                    els.textBox.style.display = 'block';
-                    els.audioBox.style.display = 'block';
-                    els.audioTitle.innerText = "🎧 Слушать практику";
-                    els.audioPlayer.src = BASE_URL + "audio/day1_adult.mp3";
-                    els.scrollBtn.classList.add('visible');
-                }
-            } else {
-                // ДЛЯ ОСТАЛЬНЫХ ДНЕЙ (Заглушка пока)
-                els.textDisplay.innerHTML = "<p style='text-align:center; padding:20px;'>Этот день пока загружается...</p>";
-                els.textBox.style.display = 'block';
-            }
-            
-            // Загружаем аудио, если блок видим
-            if (els.audioBox.style.display === 'block') els.audioPlayer.load();
-        }
-
-        // --- ЛОГИКА ОКОН (ПРОСТАЯ И НАДЕЖНАЯ) ---
+        // --- 2. МОДАЛКА ---
         function showModal(dayNum) {
             targetDayToUnlock = dayNum;
-            document.getElementById('access-modal').style.display = 'flex';
-            switchTab('buy'); // Сброс на вкладку покупки
+            document.getElementById('offer-modal').style.display = 'flex';
         }
         function closeModal() {
-            document.getElementById('access-modal').style.display = 'none';
-            targetDayToUnlock = null;
+            document.getElementById('offer-modal').style.display = 'none';
         }
-        function switchTab(tab) {
-            document.getElementById('tab-buy').style.display = (tab === 'buy') ? 'block' : 'none';
-            document.getElementById('tab-key').style.display = (tab === 'key') ? 'block' : 'none';
-            // Стили кнопок
-            const tabs = document.querySelectorAll('.tab-btn');
-            tabs[0].classList.toggle('active', tab === 'buy');
-            tabs[1].classList.toggle('active', tab === 'key');
-        }
-
-        // --- ПОКУПКА ---
         function buy(type) {
-            const url = "https://t.me/golokagid";
-            let text = "";
-            if (type === 'full') text = "Здравствуйте! Хочу купить ПОЛНЫЙ ДОСТУП за 30000 руб";
-            else text = `Здравствуйте! Хочу купить доступ к Дню ${targetDayToUnlock} за 1000 руб`;
-            
-            window.open(`${url}?text=${encodeURIComponent(text)}`, '_blank');
+            const text = type === 'full' ? "Хочу купить ПОЛНЫЙ ДОСТУП за 3000 руб" : "Хочу купить доступ за 100 руб";
+            window.open(`https://t.me/golokagid?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        // --- КЛЮЧИ (ЗАГЛУШКА) ---
-        function checkKey() {
-            const code = document.getElementById('key-input').value.toUpperCase();
-            if (code === 'TEST') {
-                unlockedDays.push(targetDayToUnlock);
-                localStorage.setItem('elli_access', JSON.stringify(unlockedDays));
-                alert('Доступ открыт!');
-                closeModal();
-                renderGrid();
-                openDayMenu(targetDayToUnlock, items[targetDayToUnlock-1].n);
-            } else {
-                alert('Неверный код (для теста введите TEST)');
-            }
-        }
-
-        // --- НАВИГАЦИЯ (ТВОЙ КОД) ---
+        // --- 3. НАВИГАЦИЯ (ТВОЯ СТАРАЯ) ---
         function openDayMenu(num, name) {
             currentDayNum = num;
             switchView('view-menu');
@@ -313,14 +164,90 @@
                 renderGrid();
             }
         }
-        function switchView(viewId) { document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view')); document.getElementById(viewId).classList.add('active-view'); }
-        function goBackToMenu() { document.getElementById('audio-player').pause(); document.getElementById('video-player').pause(); switchView('view-menu'); }
-        function goHome() { document.getElementById('audio-player').pause(); document.getElementById('video-player').pause(); switchView('view-grid'); }
+
+        // --- 4. КОНТЕНТ (ИСПРАВЛЕННЫЙ) ---
+        // Используем встроенный текст, если это День 1
+        async function openContent(type) {
+            switchView('view-content');
+            stopScroll(); 
+            
+            const videoArea = document.getElementById('video-area');
+            const videoPlayer = document.getElementById('video-player');
+            const textBox = document.getElementById('text-box');
+            const textDisplay = document.getElementById('text-display');
+            const audioBox = document.getElementById('audio-box');
+            const audioPlayer = document.getElementById('audio-player');
+            const mainImage = document.getElementById('main-image');
+            const scrollBtn = document.getElementById('scroll-btn');
+            const titleLabel = document.getElementById('header-title');
+
+            // Сброс
+            videoPlayer.pause(); audioPlayer.pause();
+            videoArea.style.display = 'none'; textBox.style.display = 'none';
+            audioBox.style.display = 'none'; mainImage.style.display = 'none';
+            scrollBtn.classList.remove('visible'); textDisplay.innerHTML = ""; 
+
+            // ГАРАНТИЯ КОНТЕНТА ДЛЯ ДНЯ 1
+            if (currentDayNum === 1) {
+                if (type === 'story') {
+                    titleLabel.innerText = "📖 История";
+                    textDisplay.innerHTML = day1_texts.story; // Берем из переменной
+                    textBox.style.display = 'block';
+                    audioBox.style.display = 'block'; 
+                    audioPlayer.src = `https://goloka-gid.github.io/audio/day1_story.mp3`; // Полный путь
+                    scrollBtn.classList.add('visible');
+                } 
+                else if (type === 'video') {
+                    titleLabel.innerText = "🎬 Видео";
+                    videoArea.style.display = 'block'; 
+                    videoPlayer.src = `https://goloka-gid.github.io/videos/day1.mp4`; // Полный путь
+                } 
+                else if (type === 'song') {
+                    titleLabel.innerText = "🎵 Песенка";
+                    mainImage.src = `https://goloka-gid.github.io/images/day1.jpg`; // Полный путь
+                    mainImage.style.display = 'block';
+                    audioBox.style.display = 'block'; 
+                    audioPlayer.src = `https://goloka-gid.github.io/audio/day1_song.mp3`;
+                } 
+                else if (type === 'child') {
+                    titleLabel.innerText = "👶 Практика (Дети)";
+                    textDisplay.innerHTML = day1_texts.child; // Берем из переменной
+                    textBox.style.display = 'block';
+                    audioBox.style.display = 'block'; 
+                    audioPlayer.src = `https://goloka-gid.github.io/audio/day1_child.mp3`;
+                    scrollBtn.classList.add('visible');
+                } 
+                else if (type === 'adult') {
+                    titleLabel.innerText = "🧘‍♀️ Практика (Взр)";
+                    textDisplay.innerHTML = day1_texts.adult; // Берем из переменной
+                    textBox.style.display = 'block';
+                    audioBox.style.display = 'block'; 
+                    audioPlayer.src = `https://goloka-gid.github.io/audio/day1_adult.mp3`;
+                    scrollBtn.classList.add('visible');
+                }
+            } else {
+                // ДЛЯ ДРУГИХ ДНЕЙ (Старая логика)
+                // Пока оставим заглушку, чтобы проверить День 1
+                textDisplay.innerHTML = "<p style='text-align:center'>Загрузка...</p>";
+                textBox.style.display = 'block';
+            }
+            
+            if (audioBox.style.display === 'block') audioPlayer.load();
+        }
+
+        // Вспомогательные функции (Старые)
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
+            document.getElementById(viewId).classList.add('active-view');
+        }
+        function goBackToMenu() { stopScroll(); document.getElementById('audio-player').pause(); document.getElementById('video-player').pause(); switchView('view-menu'); }
+        function goHome() { stopScroll(); document.getElementById('audio-player').pause(); document.getElementById('video-player').pause(); switchView('view-grid'); }
         let scrollInterval; let isScrolling = false;
         function toggleAutoScroll() { const container = document.getElementById('scroll-box'); const btn = document.getElementById('scroll-btn'); if (isScrolling) { clearInterval(scrollInterval); btn.classList.remove('active'); } else { scrollInterval = setInterval(() => { container.scrollTop += 1; }, 35); btn.classList.add('active'); } isScrolling = !isScrolling; }
         function stopScroll() { clearInterval(scrollInterval); isScrolling = false; const btn = document.getElementById('scroll-btn'); if(btn) btn.classList.remove('active'); }
+        function resetApp() { if(confirm("Сбросить?")) { localStorage.clear(); location.reload(); } }
 
-        const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
+        const tg = window.Telegram.WebApp; tg.ready(); tg.expand(); tg.setHeaderColor('#fdfbf7'); tg.setBackgroundColor('#fdfbf7');
         tg.BackButton.onClick(() => { if (document.getElementById('view-menu').classList.contains('active-view')) goHome(); else if (document.getElementById('view-content').classList.contains('active-view')) goBackToMenu(); });
         setInterval(() => { if (document.getElementById('view-grid').classList.contains('active-view')) tg.BackButton.hide(); else tg.BackButton.show(); }, 200);
     </script>
