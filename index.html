@@ -5,129 +5,223 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Мир Элли</title>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Lora:ital,wght@0,400;1,500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* Глобальный сброс для правильного расчета ширины */
+        * { box-sizing: border-box; }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #FFF5E1 0%, #E6E6FA 50%, #E0F7FA 100%);
+            --accent: #8A2BE2;
+            --text-color: #483D8B;
+            --gold: #FFD700;
+        }
+
+        body {
+            font-family: 'Comfortaa', cursive;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-color);
+            margin: 0; 
+            padding: 10px; /* Уменьшили отступ, чтобы влезло 3 колонки */
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Анимации */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #main-view { display: block; animation: fadeIn 0.8s ease-out; }
+        
+        h1 {
+            text-shadow: 2px 2px 0px rgba(255,255,255,0.8);
+            font-size: 24px; margin: 15px 0 20px 0;
+        }
+
+        /* Сетка Дней: Оптимизирована для телефонов */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; /* Уменьшили зазор между карточками */
+            max-width: 500px; 
+            margin: 0 auto; 
+            padding-bottom: 50px; 
+        }
+        
+        .day-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px; /* Чуть меньше радиус для компактности */
+            padding: 10px 2px; /* Компактные отступы внутри */
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(138, 43, 226, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.8); 
+            transition: all 0.2s;
+            position: relative; cursor: pointer;
+            
+            /* Чтобы текст не растягивал карточку */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 0; /* Важно для Grid! */
+        }
+        .day-card:active { transform: scale(0.95); }
+        
+        .day-card.completed {
+            border-color: var(--gold);
+            background: rgba(255, 248, 220, 0.8);
+        }
+        .day-card.completed::after {
+            content: '⭐'; position: absolute; top: -6px; right: -6px;
+            font-size: 14px; animation: float 3s infinite ease-in-out;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+            z-index: 2;
+        }
+
+        .day-icon { font-size: 28px; margin: 4px 0; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.1)); }
+        
+        .day-name { 
+            font-size: 10px; 
+            font-weight: bold; 
+            line-height: 1.1; 
+            width: 100%;
+            word-wrap: break-word; /* Перенос длинных слов */
+            overflow-wrap: break-word;
+            padding: 0 2px;
+        }
+
+        /* Экран чтения */
+        #content-page {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-gradient); z-index: 1000;
+        }
+
+        .header-fixed {
+            position: absolute; top: 0; left: 0; width: 100%; height: 70px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            z-index: 1100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 5px 20px rgba(138, 43, 226, 0.05);
+        }
+
+        .scroll-wrapper {
+            position: relative; height: 100%; padding-top: 70px;
+            mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+        }
+
+        .scroll-container {
+            height: 100%; overflow-y: auto; scroll-behavior: smooth;
+            padding: 15px 15px 200px 15px; box-sizing: border-box;
+        }
+
+        .magic-scroll-btn {
+            background: linear-gradient(45deg, #9b87f5, #8A2BE2);
+            border: none; padding: 10px 18px;
+            border-radius: 50px; color: white; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+            font-family: 'Comfortaa'; cursor: pointer; font-size: 13px; transition: 0.3s;
+        }
+        .magic-scroll-btn:active { transform: scale(0.95); opacity: 0.9; }
+        .magic-scroll-btn.active { background: #ff6b6b; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
+
+        .magic-text {
+            font-family: 'Lora', serif;
+            font-size: 18px; line-height: 1.7; color: #3a2b5d;
+            text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.8);
+            white-space: pre-wrap; margin: 10px 0;
+        }
+
+        .section-box {
+            background: rgba(255,255,255,0.5);
+            border-radius: 24px; padding: 20px 15px; margin-bottom: 20px;
+            border: 2px solid white;
+            box-shadow: 0 10px 30px rgba(138, 43, 226, 0.05);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .back-btn { 
+            background: white; border: none; width: 40px; height: 40px; border-radius: 50%; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 20px; cursor: pointer; 
+            color: var(--accent); transition: 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .back-btn:active { transform: scale(0.9); }
+
+        /* Медиа */
+        .book-media {
+            width: 100%; max-width: 100%; display: block;
+            margin: 20px auto; border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(138, 43, 226, 0.15);
+            border: 4px solid white;
+        }
+        
+        .video-container {
+            position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+            border-radius: 16px; border: 4px solid white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            background: black; margin-top: 15px; display: none;
+        }
+        .video-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        audio { filter: drop-shadow(0 4px 4px rgba(0,0,0,0.05)); border-radius: 30px; width: 100%; }
+    </style>
 </head>
 <body>
 
-    <div id="view-grid" class="view-section active-view">
-        <h1>✨ Путешествие Элли</h1>
-        <p style="text-align:center; font-size:10px; opacity:0.3;" onclick="resetTimer()">[Сброс таймера (тест)]</p>
+    <div id="main-view">
+        <h1 style="text-align: center; color: var(--accent);">✨ Путешествие Элли</h1>
         <div class="grid" id="main-grid"></div>
     </div>
 
-    <div id="paywall-modal" class="modal-overlay">
-        <div class="modal-card">
-            <button class="btn-close" onclick="closePaywall()">✖</button>
-            <div class="modal-icon">🔒</div>
-            <div class="modal-title">День закрыт</div>
-            <div class="modal-text">Введи код доступа.</div>
-            <input type="text" id="access-code" class="code-input" placeholder="Код доступа" oninput="this.value = this.value.toUpperCase()">
-            <button class="btn-buy btn-primary" id="btn-main-action" onclick="checkCode()">✨ Активировать</button>
-            <button class="btn-buy btn-secondary" id="btn-secondary-action" onclick="openSpecialOffer()">💬 Получить код (Написать Фее)</button>
-        </div>
-    </div>
-
-    <div id="offer-modal" class="modal-overlay">
-        <div class="modal-card">
-            <button class="btn-close" onclick="closeOffer()">✖</button>
-            <div id="offer-content-active" style="display:none;">
-                <div class="modal-icon">🎁</div>
-                <div class="modal-title">Секретное предложение!</div>
-                <div id="timer-display" class="timer-display">15:00</div>
-                <div class="pricing-card highlight">
-                    <div class="offer-label-highlight">Скидка 90%</div>
-                    <div style="font-size:12px; margin-bottom:5px;">Полный доступ ко всем дням</div>
-                    <div class="price-row"><span class="old-price">30000 ₽</span><span class="new-price red">3000 ₽</span></div>
-                    <button class="btn-buy btn-discount" style="margin-bottom:0" onclick="goToTelegram('full_discount')">Купить ВСЁ за 3000 ₽</button>
-                </div>
-                <div class="pricing-card">
-                    <div class="offer-label-normal" id="single-day-label">Доступ к выбранному дню</div>
-                    <div class="price-row"><span class="old-price">1000 ₽</span><span class="new-price">100 ₽</span></div>
-                    <button class="btn-buy btn-normal" style="margin-bottom:0" onclick="goToTelegram('single_discount')">Купить за 100 ₽</button>
-                </div>
-            </div>
-            <div id="offer-content-expired" style="display:none;">
-                <div class="modal-icon">🗝️</div>
-                <div class="modal-title">Получить доступ</div>
-                <div class="modal-text">Скидка истекла. Выберите вариант:</div>
-                <div class="pricing-card full-price">
-                    <div class="offer-label-normal">Полный доступ</div>
-                    <div class="price-row"><span class="new-price">30 000 ₽</span></div>
-                    <button class="btn-buy btn-primary" style="margin-bottom:0" onclick="goToTelegram('full_price')">Купить за 30 000 ₽</button>
-                </div>
-                <div class="pricing-card full-price">
-                    <div class="offer-label-normal" id="expired-single-label">Доступ к выбранному дню</div>
-                    <div class="price-row"><span class="new-price">1 000 ₽</span></div>
-                    <button class="btn-buy btn-secondary" style="margin-bottom:0" onclick="goToTelegram('single_price')">Купить за 1 000 ₽</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="donate-modal" class="modal-overlay">
-        <div class="modal-card">
-            <button class="btn-close" onclick="closeDonate()">✖</button>
-            <div class="modal-icon">🙏</div>
-            <div class="modal-title">Поддержка проекта</div>
-            <div id="donate-step-1">
-                <div class="modal-text">Если вы не планируете покупку, возможно, вы захотите поддержать нас?</div>
-                <button class="btn-buy btn-donate-action" onclick="showDonateInfo()">Хочу просто сделать пожертвование</button>
-            </div>
-            <div id="donate-step-2" style="display:none;">
-                <div class="modal-text">Вы можете сделать любой перевод удобным для вас способом.</div>
-                <div style="margin: 15px 0; font-size:12px; color:#444; background:#f0f0f0; padding:10px; border-radius:10px;">Реквизиты по ссылке ниже 👇</div>
-                <button class="btn-buy btn-primary" onclick="window.open('https://t.me/donate_gid', '_blank')">Перейти к оплате</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="view-menu" class="view-section">
-        <button class="simple-back" onclick="goHome()">⬅ К карте дней</button>
-        <h2 id="menu-title" style="margin-top: 0;"></h2>
-        <div class="menu-container">
-            <div class="menu-btn" onclick="openContent('story')"><span class="menu-icon">📖</span><div><div style="font-weight:bold">Сказочная история</div><div style="font-size:11px; opacity:0.7">Читать и слушать</div></div></div>
-            <div class="menu-btn" onclick="openContent('video')"><span class="menu-icon">🎬</span><div><div style="font-weight:bold">Смотреть видео</div><div style="font-size:11px; opacity:0.7">Волшебный мультфильм</div></div></div>
-            <div class="menu-btn" onclick="openContent('song')"><span class="menu-icon">🎵</span><div><div style="font-weight:bold">Песенка дня</div><div style="font-size:11px; opacity:0.7">Танцуй и пой</div></div></div>
-            <div class="menu-btn" onclick="openContent('child')"><span class="menu-icon">👶</span><div><div style="font-weight:bold">Практика для детей</div><div style="font-size:11px; opacity:0.7">до 15 лет</div></div></div>
-            <div class="menu-btn" onclick="openContent('adult')"><span class="menu-icon">🧘‍♀️</span><div><div style="font-weight:bold">Взрослая практика</div><div style="font-size:11px; opacity:0.7">Осознанность для тебя</div></div></div>
-        </div>
-    </div>
-
-    <div id="view-content" class="view-section">
+    <div id="content-page">
         <div class="header-fixed">
-            <button class="nav-btn" onclick="goHome()">🏠 Дни</button>
-            <span id="header-title" style="font-size:12px; font-weight:bold; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
-            <button class="nav-btn" onclick="goBackToMenu()">🔙 Меню</button>
+            <button class="back-btn" onclick="closeDay()">🔙</button>
+            <button class="magic-scroll-btn" id="scroll-btn" onclick="toggleAutoScroll()">✨ Читать</button>
         </div>
-        <div class="scroll-wrapper" id="scroll-box">
-            <div style="padding: 15px;">
-                <div id="status-message" style="display:none; text-align:center; padding:20px; color:#999;"></div>
-                <div id="video-area" style="display:none;">
-                    <div class="section-box" style="text-align: center;">
-                        <h3 style="color: var(--accent); margin:0 0 10px 0;">🎬 Приятного просмотра!</h3>
-                        <div class="video-wrapper"><video id="video-player" controls playsinline></video></div>
+
+        <div class="scroll-wrapper">
+            <div class="scroll-container" id="scroll-box">
+                <h2 id="title-label" style="text-align: center; color: var(--accent); margin-bottom: 15px;"></h2>
+
+                <div class="section-box" id="video-box" style="display:none; text-align:center;">
+                    <h3 style="color: var(--accent); margin-top:0; font-size: 16px;">🎬 Волшебное видео</h3>
+                    <div class="video-container" id="video-wrapper">
+                        <video id="video-player" controls playsinline></video>
                     </div>
                 </div>
-                <img id="main-image" src="" class="book-media" style="display:none;">
-                <div class="section-box" id="text-box" style="display:none;"><div id="text-display" class="magic-text"></div></div>
-                <div class="section-box" id="audio-box" style="display:none;"><h3 id="audio-title" style="color: var(--accent); margin-top:0; font-size: 16px;">🎧 Слушать</h3><audio id="audio-player" controls></audio></div>
+
+                <div class="section-box">
+                    <div id="story-display" class="magic-text"></div>
+                </div>
+
+                <div class="section-box">
+                    <h3 style="color: var(--accent); margin-top:0; font-size: 16px;">🎵 Слушать сказку</h3>
+                    <audio id="audio-player" controls></audio>
+                </div>
+                
+                <div class="section-box">
+                    <h3 style="color: var(--accent); margin-top:0; font-size: 16px;">🧘 Практика дня</h3>
+                    <div id="practice-display" class="magic-text" style="font-size: 16px;"></div>
+                </div>
             </div>
         </div>
-        <button class="fab-scroll" id="scroll-btn" onclick="toggleAutoScroll()">✨</button>
     </div>
 
     <script>
-        // ВАЖНО: Базовый адрес. Теперь мы не зависим от того, откуда открыт файл.
-        const BASE_URL = 'https://goloka-gid.github.io/';
-
-        // Резервный текст на случай ошибки загрузки
-        const day1_backup = {
-            child: `<p><b>🎨 День 1. Волшебная Кисть</b></p><p>Представь: ты просыпаешься утром, потягиваешься — и вдруг чувствуешь лёгкое тепло в ладони. Ты открываешь глаза и видишь... её! Невидимую для других, но светящуюся для тебя Волшебную Кисть.</p><p><i>«Ты — художник своей жизни. Ты можешь рисовать каждый новый день таким, каким хочешь его видеть».</i></p><p><b>🧘‍♀️ Практика:</b> Сядь удобно. Вдохни золотистый свет. Представь холст своего дня. Раскрась его яркими красками!</p>`,
-            adult: `<p><b>🎨 День 1. Волшебная Кисть (Взрослые)</b></p><p>Ты открываешь глаза утром. На столике записка: <i>«Ты забыл, что можешь создавать. Не вещи — состояния. Вот тебе кисть».</i></p><p><b>🧘 Практика визуализации:</b> Представь огромный белый холст. Это сегодняшний день. Каким цветом ты хочешь его наполнить? Какое состояние прожить?</p>`,
-            story: `<p><b>✨ Элли и Волшебная Кисть</b></p><p>В краю, где звёзды спускаются низко-низко, жила девочка по имени Элли. У неё был секрет. Каждое утро она находила под подушкой новую краску.</p><p>Но однажды краски исчезли. Осталась только одна, прозрачная, как вода. И старая кисточка...</p>`
-        };
-
         const items = [
             {n: "Волшебная Кисть", i: "🖌️"}, {n: "Зеркало Мечты", i: "🪞"}, {n: "Компас Намерений", i: "🧭"},
             {n: "Сундук Благодарностей", i: "📦"}, {n: "Амулет Силы", i: "🧿"}, {n: "Волшебный Пояс", i: "🎗️"},
@@ -141,13 +235,9 @@
             {n: "Золотая Нить", i: "🧵"}, {n: "Звезда Надежды", i: "⭐"}, {n: "Волшебный Ключ", i: "🔑"}
         ];
 
-        let currentDayNum = 1;
+        let isScrolling = false;
+        let scrollInterval;
         let readDays = JSON.parse(localStorage.getItem('elli_progress')) || [];
-        let unlockedDays = JSON.parse(localStorage.getItem('elli_access')) || [1];
-        let hasFullAccess = JSON.parse(localStorage.getItem('elli_full_access')) || false;
-        let targetDayToUnlock = null;
-        let offerInterval;
-        const OFFER_DURATION = 15 * 60 * 1000;
 
         function renderGrid() {
             const grid = document.getElementById('main-grid');
@@ -156,222 +246,134 @@
                 const dayNum = i + 1;
                 const card = document.createElement('div');
                 const isRead = readDays.includes(dayNum);
-                const isUnlocked = (dayNum === 1) || hasFullAccess || unlockedDays.includes(dayNum);
-                const prevDayRead = (dayNum === 1) || readDays.includes(dayNum - 1);
-                let classes = 'day-card'; let iconHtml = `<div class="day-icon">${item.i}</div>`; let lockHtml = '';
-                if (!prevDayRead) { classes += ' frozen'; lockHtml = `<div class="lock-icon" style="opacity:0.5">❄️</div>`; }
-                else if (!isUnlocked) { classes += ' locked'; lockHtml = `<div class="lock-icon">🔒</div>`; }
-                else if (isRead) classes += ' completed';
-                card.className = classes;
-                card.innerHTML = `${lockHtml}<div style="font-size:9px; color: ${isRead ? '#d4af37' : '#aaa'}; font-weight:${isRead?'bold':'normal'};">ДЕНЬ ${dayNum}</div>${iconHtml}<div class="day-name">${item.n}</div>`;
-                if (prevDayRead) { card.onclick = isUnlocked ? () => openDayMenu(dayNum, item.n) : () => showPaywall(dayNum); }
-                else { card.onclick = () => showFutureWarning(); }
+                card.className = `day-card ${isRead ? 'completed' : ''}`;
+                // Используем flex для выравнивания и word-wrap для переноса
+                card.innerHTML = `
+                    <div style="font-size:9px; color: ${isRead ? '#d4af37' : '#aaa'}; font-weight:${isRead?'bold':'normal'}; margin-bottom:2px;">ДЕНЬ ${dayNum}</div>
+                    <div class="day-icon">${item.i}</div>
+                    <div class="day-name">${item.n}</div>
+                `;
+                card.onclick = () => openDay(dayNum, item.n);
                 grid.appendChild(card);
             });
         }
+        
         renderGrid();
 
-        // --- ЛОГИКА КОНТЕНТА (С ПОЛНЫМИ ССЫЛКАМИ) ---
-        async function openContent(type) {
-            // Сначала переключаем экран, чтобы пользователь видел реакцию
-            switchView('view-content'); stopScroll();
-            
-            const els = {
-                videoArea: document.getElementById('video-area'),
-                videoPlayer: document.getElementById('video-player'),
-                textBox: document.getElementById('text-box'),
-                textDisplay: document.getElementById('text-display'),
-                audioBox: document.getElementById('audio-box'),
-                audioPlayer: document.getElementById('audio-player'),
-                mainImage: document.getElementById('main-image'),
-                scrollBtn: document.getElementById('scroll-btn'),
-                status: document.getElementById('status-message')
-            };
-
-            // Сброс
-            els.videoPlayer.pause(); els.audioPlayer.pause();
-            els.videoArea.style.display = 'none'; els.textBox.style.display = 'none'; 
-            els.audioBox.style.display = 'none'; els.mainImage.style.display = 'none';
-            els.scrollBtn.classList.remove('visible'); els.textDisplay.innerHTML = "";
-            els.status.style.display = 'block'; els.status.innerText = "Загрузка...";
-
-            try {
-                if (type === 'story') {
-                    document.getElementById('header-title').innerText = "📖 История";
-                    await loadTextContent(`texts/day${currentDayNum}_story.html`, 'story');
-                    els.audioBox.style.display = 'block'; 
-                    document.getElementById('audio-title').innerText = "🎧 Слушать сказку";
-                    els.audioPlayer.src = `${BASE_URL}audio/day${currentDayNum}_story.mp3`; 
-                    els.scrollBtn.classList.add('visible');
-
-                } else if (type === 'video') {
-                    document.getElementById('header-title').innerText = "🎬 Видео";
-                    els.status.style.display = 'none';
-                    els.videoArea.style.display = 'block'; 
-                    els.videoPlayer.src = `${BASE_URL}videos/day${currentDayNum}.mp4`;
-
-                } else if (type === 'song') {
-                    document.getElementById('header-title').innerText = "🎵 Песенка";
-                    els.status.style.display = 'none';
-                    els.mainImage.src = `${BASE_URL}images/day${currentDayNum}.jpg`; 
-                    els.mainImage.style.display = 'block';
-                    els.audioBox.style.display = 'block'; 
-                    document.getElementById('audio-title').innerText = "🎧 Слушать песенку";
-                    els.audioPlayer.src = `${BASE_URL}audio/day${currentDayNum}_song.mp3`;
-
-                } else if (type === 'child') {
-                    document.getElementById('header-title').innerText = "👶 Практика (Дети)";
-                    await loadTextContent(`texts/day${currentDayNum}_child.html`, 'child');
-                    els.audioBox.style.display = 'block'; 
-                    document.getElementById('audio-title').innerText = "🎧 Слушать практику";
-                    els.audioPlayer.src = `${BASE_URL}audio/day${currentDayNum}_child.mp3`; 
-                    els.scrollBtn.classList.add('visible');
-
-                } else if (type === 'adult') {
-                    document.getElementById('header-title').innerText = "🧘‍♀️ Практика (Взр)";
-                    await loadTextContent(`texts/day${currentDayNum}_adult.html`, 'adult');
-                    els.audioBox.style.display = 'block'; 
-                    document.getElementById('audio-title').innerText = "🎧 Слушать практику";
-                    els.audioPlayer.src = `${BASE_URL}audio/day${currentDayNum}_adult.mp3`; 
-                    els.scrollBtn.classList.add('visible');
-                }
-                
-                if (els.audioBox.style.display === 'block') els.audioPlayer.load();
-
-            } catch (err) {
-                // Если возникла неожиданная ошибка в коде
-                alert("Ошибка: " + err.message);
-                els.status.innerText = "Ошибка приложения";
-            }
-        }
-
-        async function loadTextContent(relativePath, typeKey) {
-            const textBox = document.getElementById('text-box');
-            const textDisplay = document.getElementById('text-display');
-            const status = document.getElementById('status-message');
-
-            try {
-                // Используем BASE_URL для жесткой привязки
-                const res = await fetch(BASE_URL + relativePath);
-                if (res.ok) {
-                    let text = await res.text();
-                    textDisplay.innerHTML = formatText(text, currentDayNum);
-                    textBox.style.display = 'block';
-                    status.style.display = 'none';
-                } else {
-                    throw new Error("Файл не найден");
-                }
-            } catch (e) {
-                // Если не загрузилось - используем встроенный текст
-                if (currentDayNum === 1 && day1_backup[typeKey]) {
-                    textDisplay.innerHTML = formatText(day1_backup[typeKey], 1);
-                    textBox.style.display = 'block';
-                    status.style.display = 'none';
-                } else {
-                    status.innerText = "Текст не найден. Проверьте подключение.";
-                    status.style.display = 'block';
-                }
-            }
-        }
-
-        // --- СИСТЕМНЫЕ ФУНКЦИИ ---
-        function showFutureWarning() {
-            const nextStep = items.findIndex((_, i) => !readDays.includes(i+1)) + 1;
-            document.getElementById('modal-icon').innerText = "⏳";
-            document.getElementById('modal-title').innerText = "Не спеши!";
-            document.getElementById('modal-text').innerHTML = `Пройди сначала День ${nextStep}!`;
-            document.getElementById('access-code').style.display = 'none';
-            document.getElementById('btn-secondary-action').style.display = 'none';
-            const btn = document.getElementById('btn-main-action');
-            btn.innerText = "Хорошо"; btn.onclick = () => { document.getElementById('paywall-modal').style.display = 'none'; }; 
-            document.getElementById('paywall-modal').style.display = 'flex';
-        }
-        function showPaywall(dayNum) {
-            targetDayToUnlock = dayNum;
-            document.getElementById('modal-icon').innerText = "🔒";
-            document.getElementById('modal-title').innerText = `Открыть День ${dayNum}`;
-            document.getElementById('modal-text').innerText = "Введи код доступа:";
-            document.getElementById('access-code').style.display = 'block';
-            document.getElementById('access-code').value = '';
-            document.getElementById('btn-secondary-action').style.display = 'block';
-            const btn = document.getElementById('btn-main-action');
-            btn.innerText = "✨ Активировать"; btn.onclick = checkCode;
-            document.getElementById('paywall-modal').style.display = 'flex';
-        }
-        function openSpecialOffer() {
-            document.getElementById('paywall-modal').style.display = 'none';
-            document.getElementById('offer-modal').style.display = 'flex';
-            const dayNum = targetDayToUnlock ? targetDayToUnlock : "...";
-            const labelText = `Доступ к Дню ${dayNum}`;
-            document.getElementById('single-day-label').innerText = labelText;
-            document.getElementById('expired-single-label').innerText = labelText;
-            let startTime = localStorage.getItem('elli_offer_start');
-            if (!startTime) { startTime = Date.now(); localStorage.setItem('elli_offer_start', startTime); }
-            updateTimerUI(startTime);
-            if (offerInterval) clearInterval(offerInterval);
-            offerInterval = setInterval(() => updateTimerUI(startTime), 1000);
-        }
-        function updateTimerUI(startTime) {
-            const now = Date.now();
-            const elapsed = now - parseInt(startTime);
-            const remaining = OFFER_DURATION - elapsed;
-            if (remaining > 0) {
-                document.getElementById('offer-content-active').style.display = 'block';
-                document.getElementById('offer-content-expired').style.display = 'none';
-                const minutes = Math.floor(remaining / 60000);
-                const seconds = Math.floor((remaining % 60000) / 1000);
-                document.getElementById('timer-display').innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            } else {
-                clearInterval(offerInterval);
-                document.getElementById('offer-content-active').style.display = 'none';
-                document.getElementById('offer-content-expired').style.display = 'block';
-            }
-        }
-        function goToTelegram(type) {
-            const baseUrl = "https://t.me/golokagid"; let text = ""; let dayNum = targetDayToUnlock || "...";
-            if (type === 'full_discount') text = "Здравствуйте! Хочу купить ПОЛНЫЙ ДОСТУП СО СКИДКОЙ за 3000 руб";
-            else if (type === 'single_discount') text = `Здравствуйте! Хочу купить доступ к Дню ${dayNum} за 100 руб (со скидкой)`;
-            else if (type === 'full_price') text = "Здравствуйте! Хочу купить ПОЛНЫЙ ДОСТУП за 30000 руб";
-            else if (type === 'single_price') text = `Здравствуйте! Хочу купить доступ к Дню ${dayNum} за 1000 руб`;
-            window.open(`${baseUrl}?text=${encodeURIComponent(text)}`, '_blank');
-        }
-        function closeOffer() { document.getElementById('offer-modal').style.display = 'none'; clearInterval(offerInterval); openDonateModal(); }
-        function closePaywall() { document.getElementById('paywall-modal').style.display = 'none'; if (targetDayToUnlock) openDonateModal(); targetDayToUnlock = null; }
-        function openDonateModal() { document.getElementById('donate-step-1').style.display = 'block'; document.getElementById('donate-step-2').style.display = 'none'; document.getElementById('donate-modal').style.display = 'flex'; }
-        function closeDonate() { document.getElementById('donate-modal').style.display = 'none'; }
-        function showDonateInfo() { document.getElementById('donate-step-1').style.display = 'none'; document.getElementById('donate-step-2').style.display = 'block'; }
-        function resetTimer() { localStorage.removeItem('elli_offer_start'); alert("Таймер сброшен!"); closeOffer(); }
-        async function checkCode() {
-            const input = document.getElementById('access-code'); const code = input.value.trim().toUpperCase();
-            if (!code) { alert("Введи код!"); return; }
-            try {
-                const res = await fetch(BASE_URL + 'codes.json'); const codes = await res.json();
-                if (codes[code]) {
-                    if (codes[code] === 'full') activateFullAccess();
-                    else if (codes[code] == targetDayToUnlock) activateSingleDay(targetDayToUnlock);
-                    else alert("Код от другого дня!");
-                } else alert("Неверный код 😔");
-            } catch (e) { alert("Ошибка проверки кода"); }
-        }
-        function activateSingleDay(day) { if (!unlockedDays.includes(day)) { unlockedDays.push(day); localStorage.setItem('elli_access', JSON.stringify(unlockedDays)); } alert("✨ День открыт!"); document.getElementById('paywall-modal').style.display = 'none'; renderGrid(); openDayMenu(day, items[day-1].n); }
-        function activateFullAccess() { hasFullAccess = true; localStorage.setItem('elli_full_access', JSON.stringify(true)); alert("✨ Все дни открыты!"); document.getElementById('paywall-modal').style.display = 'none'; renderGrid(); }
-        function resetApp() { if(confirm("Сбросить?")) { localStorage.clear(); location.reload(); } }
-        function openDayMenu(num, name) { currentDayNum = num; switchView('view-menu'); document.getElementById('menu-title').innerText = `День ${num}: ${name}`; if (!readDays.includes(num)) { readDays.push(num); localStorage.setItem('elli_progress', JSON.stringify(readDays)); renderGrid(); } }
-        function switchView(viewId) { document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view')); document.getElementById(viewId).classList.add('active-view'); }
-        function formatText(text, dayNum) {
+        // --- ЛОГИКА КОНТЕНТА ---
+        function formatStory(text, dayNum) {
             if (!text) return "";
-            // Замена плейсхолдеров картинок на абсолютные пути
-            let html = text.replace(/\[IMAGE(\d*)\]/g, (match, p1) => { const suffix = p1 ? `_${p1}` : ''; return `<img src="${BASE_URL}images/day${dayNum}${suffix}.jpg" class="book-media" onerror="this.style.display='none'">`; });
-            html = html.replace(/\[GIF(\d*)\]/g, (match, p1) => { const suffix = p1 ? `_${p1}` : ''; return `<img src="${BASE_URL}images/day${dayNum}${suffix}.gif" class="book-media" onerror="this.style.display='none'">`; });
+            
+            // Картинки [IMAGE] и [IMAGE1]...
+            let html = text.replace(/\[IMAGE(\d*)\]/g, (match, p1) => {
+                const suffix = p1 ? `_${p1}` : ''; 
+                return `<img src="images/day${dayNum}${suffix}.jpg" class="book-media" alt="Иллюстрация" onerror="this.style.display='none'">`;
+            });
+
+            // Гифки [GIF] и [GIF1]...
+            html = html.replace(/\[GIF(\d*)\]/g, (match, p1) => {
+                const suffix = p1 ? `_${p1}` : '';
+                return `<img src="images/day${dayNum}${suffix}.gif" class="book-media" alt="Анимация" onerror="this.style.display='none'">`;
+            });
+            
             return html;
         }
-        function goBackToMenu() { document.getElementById('audio-player').pause(); document.getElementById('video-player').pause(); switchView('view-menu'); }
-        function goHome() { document.getElementById('audio-player').pause(); document.getElementById('video-player').pause(); switchView('view-grid'); }
-        function toggleAutoScroll() { const container = document.getElementById('scroll-box'); const btn = document.getElementById('scroll-btn'); if (isScrolling) { clearInterval(scrollInterval); btn.classList.remove('active'); } else { scrollInterval = setInterval(() => { container.scrollTop += 1; if (container.scrollTop + container.clientHeight >= container.scrollHeight - 2) stopScroll(); }, 35); btn.classList.add('active'); } isScrolling = !isScrolling; }
-        function stopScroll() { clearInterval(scrollInterval); isScrolling = false; const btn = document.getElementById('scroll-btn'); if(btn) btn.classList.remove('active'); }
-        const tg = window.Telegram.WebApp; tg.ready(); tg.expand(); tg.setHeaderColor('#fdfbf7'); tg.setBackgroundColor('#fdfbf7');
-        tg.BackButton.onClick(() => { if (document.getElementById('view-menu').classList.contains('active-view')) goHome(); else if (document.getElementById('view-content').classList.contains('active-view')) goBackToMenu(); });
-        setInterval(() => { if (document.getElementById('view-grid').classList.contains('active-view')) tg.BackButton.hide(); else tg.BackButton.show(); }, 200);
+
+        async function openDay(num, name) {
+            const container = document.getElementById('scroll-box');
+            container.scrollTop = 0;
+            
+            if (!readDays.includes(num)) {
+                readDays.push(num);
+                localStorage.setItem('elli_progress', JSON.stringify(readDays));
+                renderGrid(); 
+            }
+
+            document.getElementById('title-label').innerText = name;
+            
+            const audioPlayer = document.getElementById('audio-player');
+            audioPlayer.src = `audio/day${num}_story.mp3`;
+            audioPlayer.load();
+
+            const videoBox = document.getElementById('video-box');
+            const videoWrapper = document.getElementById('video-wrapper');
+            const videoPlayer = document.getElementById('video-player');
+            
+            videoBox.style.display = 'none';
+            videoPlayer.src = "";
+
+            try {
+                const res = await fetch(`texts/day${num}.json`); 
+                if (!res.ok) throw new Error("Нет файла");
+                const data = await res.json();
+                
+                document.getElementById('story-display').innerHTML = formatStory(data.story, num);
+                document.getElementById('practice-display').innerText = (data.child || "") + "\n\n---\n\n" + (data.adult || "");
+
+                if (data.video) {
+                    videoBox.style.display = 'block';
+                    videoWrapper.style.display = 'block';
+                    videoPlayer.src = `videos/day${num}.mp4`;
+                }
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('story-display').innerText = "История пока пишется волшебниками...";
+                document.getElementById('practice-display').innerText = "";
+            }
+
+            document.getElementById('content-page').style.display = 'block';
+            document.getElementById('main-view').style.display = 'none';
+        }
+
+        function toggleAutoScroll() {
+            const container = document.getElementById('scroll-box');
+            const btn = document.getElementById('scroll-btn');
+            
+            if (isScrolling) {
+                clearInterval(scrollInterval);
+                btn.innerText = "✨ Читать";
+                btn.classList.remove('active');
+            } else {
+                scrollInterval = setInterval(() => {
+                    container.scrollTop += 1; 
+                    if (container.scrollTop + container.clientHeight >= container.scrollHeight - 5) {
+                        stopScroll();
+                    }
+                }, 30);
+                btn.innerText = "⏸ Пауза";
+                btn.classList.add('active');
+            }
+            isScrolling = !isScrolling;
+        }
+
+        function stopScroll() {
+            clearInterval(scrollInterval);
+            isScrolling = false;
+            document.getElementById('scroll-btn').innerText = "✨ В начало";
+            document.getElementById('scroll-btn').classList.remove('active');
+        }
+
+        function closeDay() {
+            clearInterval(scrollInterval);
+            isScrolling = false;
+            
+            const audio = document.getElementById('audio-player');
+            audio.pause(); 
+            const video = document.getElementById('video-player');
+            video.pause();
+
+            document.getElementById('scroll-btn').innerText = "✨ Читать";
+            document.getElementById('scroll-btn').classList.remove('active');
+
+            document.getElementById('content-page').style.display = 'none';
+            document.getElementById('main-view').style.display = 'block';
+        }
+
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+        tg.setHeaderColor('#fdfbf7'); 
+        tg.setBackgroundColor('#fdfbf7');
     </script>
 </body>
 </html>
