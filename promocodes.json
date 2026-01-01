@@ -1,1 +1,12 @@
-
+{
+  "MAGIC": {
+    "title": "Скидка 90%",
+    "full_price": 3000,
+    "day_price": 100
+  },
+  "FRIEND": {
+    "title": "Скидка для своих",
+    "full_price": 5000,
+    "day_price": 200
+  }
+}
