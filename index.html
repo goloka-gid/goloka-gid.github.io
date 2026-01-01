@@ -307,6 +307,11 @@
                 const suffix = p1 ? `_${p1}` : '';
                 return `<img src="images/day${dayNum}${suffix}.gif" class="book-media" onerror="this.style.display='none'">`;
             });
+            // Видео (как гифки)
+            html = html.replace(/\[VID(\d*)\]/g, (match, p1) => {
+                const suffix = p1 ? `_${p1}` : '';
+                return `<video src="videos/day${dayNum}${suffix}.mp4" class="book-media" autoplay muted loop playsinline onerror="this.style.display='none'"></video>`;
+            });
             return html;
         }
 
