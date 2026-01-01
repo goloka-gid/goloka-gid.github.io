@@ -4,153 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Мир Элли</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Lora:ital,wght@0,400;1,500&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        :root {
-            --bg-gradient: linear-gradient(135deg, #FFF5E1 0%, #E6E6FA 50%, #E0F7FA 100%);
-            --accent: #8A2BE2;
-            --text-color: #483D8B;
-            --gold: #FFD700;
-            --glass: rgba(255, 255, 255, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.9);
-        }
-
-        body {
-            font-family: 'Comfortaa', cursive;
-            background: var(--bg-gradient);
-            background-attachment: fixed;
-            color: var(--text-color);
-            margin: 0; padding: 10px;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* Анимации */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-3px); } 100% { transform: translateY(0px); } }
-
-        /* Общие классы */
-        .view-section { display: none; animation: fadeIn 0.4s ease-out; }
-        .active-view { display: block; }
-
-        h1, h2 { text-align: center; color: var(--accent); text-shadow: 1px 1px 0px rgba(255,255,255,0.8); }
-        h1 { font-size: 24px; margin: 15px 0 20px 0; }
-
-        /* --- ЭКРАН 1: СЕТКА ДНЕЙ --- */
-        .grid { 
-            display: grid; grid-template-columns: repeat(3, 1fr); 
-            gap: 8px; max-width: 500px; margin: 0 auto; padding-bottom: 50px; 
-        }
-        
-        .day-card {
-            background: var(--glass);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-radius: 16px; padding: 10px 2px;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(138, 43, 226, 0.1);
-            border: 1px solid var(--glass-border); 
-            transition: transform 0.2s; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .day-card:active { transform: scale(0.95); }
-        .day-card.completed { background: rgba(255, 248, 220, 0.85); border-color: var(--gold); }
-        .day-card.completed::after {
-            content: '⭐'; position: absolute; top: -6px; right: -6px;
-            font-size: 14px; animation: float 3s infinite ease-in-out;
-        }
-        .day-icon { font-size: 28px; margin: 4px 0; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.1)); }
-        .day-name { font-size: 10px; font-weight: bold; line-height: 1.1; word-wrap: break-word; padding: 0 2px; }
-
-        /* --- ЭКРАН 2: МЕНЮ ДНЯ --- */
-        .menu-container {
-            display: flex; flex-direction: column; gap: 12px;
-            max-width: 400px; margin: 5vh auto 0; padding: 20px;
-        }
-        
-        .menu-btn {
-            background: rgba(255, 255, 255, 0.8);
-            border: 2px solid white;
-            border-radius: 20px;
-            padding: 15px 20px;
-            display: flex; align-items: center; gap: 15px;
-            font-family: 'Comfortaa', cursive; font-size: 15px; color: var(--text-color);
-            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.08);
-            cursor: pointer; transition: 0.2s;
-        }
-        .menu-btn:active { transform: scale(0.97); background: #f0ebff; }
-        .menu-icon { font-size: 24px; min-width: 30px; text-align: center; }
-        
-        .simple-back {
-            background: none; border: none; color: var(--accent);
-            font-weight: bold; font-family: 'Comfortaa'; cursor: pointer;
-            margin-bottom: 5px; display: flex; align-items: center; gap: 5px;
-            padding: 10px;
-        }
-
-        /* --- ЭКРАН 3: ЧТЕНИЕ (КОНТЕНТ) --- */
-        .header-fixed {
-            position: fixed; top: 0; left: 0; width: 100%; height: 70px;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 15px; z-index: 1100;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        .nav-btn {
-            background: transparent; border: 1px solid var(--accent);
-            border-radius: 12px; padding: 6px 12px;
-            color: var(--accent); font-size: 12px; font-weight: bold;
-            cursor: pointer; display: flex; align-items: center; gap: 5px;
-            font-family: 'Comfortaa'; transition: 0.2s;
-        }
-        .nav-btn:active { background: var(--accent); color: white; }
-
-        .scroll-wrapper {
-            padding-top: 80px; height: 100vh; overflow-y: auto; scroll-behavior: smooth;
-            padding-bottom: 100px;
-        }
-        
-        .magic-text {
-            font-family: 'Lora', serif; font-size: 18px; line-height: 1.7;
-            color: #3a2b5d; white-space: pre-wrap;
-        }
-        /* Стили для параграфов внутри загружаемого текста */
-        .magic-text p { margin-bottom: 15px; margin-top: 0; }
-
-        .section-box {
-            background: rgba(255,255,255,0.5); border-radius: 24px;
-            padding: 20px 15px; margin-bottom: 20px; border: 2px solid white;
-            box-shadow: 0 10px 30px rgba(138, 43, 226, 0.05);
-        }
-
-        /* Медиа */
-        .book-media { width: 100%; border-radius: 16px; margin: 15px 0; border: 4px solid white; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-        audio { width: 100%; border-radius: 30px; margin-top: 10px; }
-        
-        .video-wrapper {
-            position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
-            border-radius: 20px; border: 4px solid white; background: black;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-top: 20px;
-        }
-        .video-wrapper video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-
-        .fab-scroll {
-            position: fixed; bottom: 30px; right: 20px;
-            background: var(--accent); color: white;
-            width: 50px; height: 50px; border-radius: 50%;
-            border: none; box-shadow: 0 4px 15px rgba(138,43,226,0.4);
-            font-size: 24px; cursor: pointer; z-index: 1200;
-            display: none; align-items: center; justify-content: center;
-        }
-        .fab-scroll.visible { display: flex; }
-        .fab-scroll.active { background: #ff6b6b; }
-    </style>
 </head>
 <body>
 
@@ -243,7 +102,7 @@
     </div>
 
     <script>
-        // ДАННЫЕ
+        // --- ДАННЫЕ ---
         const items = [
             {n: "Волшебная Кисть", i: "🖌️"}, {n: "Зеркало Мечты", i: "🪞"}, {n: "Компас Намерений", i: "🧭"},
             {n: "Сундук Благодарностей", i: "📦"}, {n: "Амулет Силы", i: "🧿"}, {n: "Волшебный Пояс", i: "🎗️"},
@@ -262,7 +121,7 @@
         let isScrolling = false;
         let scrollInterval;
 
-        // 1. ОТРИСОВКА СЕТКИ
+        // --- 1. ОТРИСОВКА СЕТКИ ---
         function renderGrid() {
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
@@ -282,13 +141,14 @@
         }
         renderGrid();
 
-        // 2. ОТКРЫТИЕ МЕНЮ
+        // --- 2. ОТКРЫТИЕ МЕНЮ ДНЯ ---
         function openDayMenu(num, name) {
             currentDayNum = num;
             
             switchView('view-menu');
             document.getElementById('menu-title').innerText = `День ${num}: ${name}`;
 
+            // Сохраняем, что день открыт
             if (!readDays.includes(num)) {
                 readDays.push(num);
                 localStorage.setItem('elli_progress', JSON.stringify(readDays));
@@ -296,17 +156,16 @@
             }
         }
 
-        // 3. ЗАГРУЗКА КОНТЕНТА (ТЕПЕРЬ ЧИТАЕТ .HTML ФАЙЛЫ)
+        // --- 3. ЗАГРУЗКА КОНТЕНТА (HTML, ВИДЕО, АУДИО) ---
         async function openContent(type) {
             switchView('view-content');
             stopScroll(); 
 
-            // Ссылки
+            // Получаем элементы
             const container = document.getElementById('scroll-box');
             container.scrollTop = 0;
             const titleLabel = document.getElementById('header-title');
             
-            // Зоны контента
             const videoArea = document.getElementById('video-area');
             const videoPlayer = document.getElementById('video-player');
             const textBox = document.getElementById('text-box');
@@ -317,7 +176,7 @@
             const mainImage = document.getElementById('main-image');
             const scrollBtn = document.getElementById('scroll-btn');
 
-            // СБРОС
+            // СБРОС ВСЕГО ПЕРЕД ОТКРЫТИЕМ
             videoPlayer.pause();
             audioPlayer.pause();
             videoArea.style.display = 'none';
@@ -325,14 +184,14 @@
             audioBox.style.display = 'none';
             mainImage.style.display = 'none';
             scrollBtn.classList.remove('visible');
-            textDisplay.innerHTML = ""; // Очистка старого текста
+            textDisplay.innerHTML = ""; 
 
-            // --- ЛОГИКА ---
+            // --- ЛОГИКА ПО ТИПАМ ---
             
             // 1. ИСТОРИЯ
             if (type === 'story') {
                 titleLabel.innerText = "📖 История";
-                await loadTextContent(`texts/day${currentDayNum}_story.html`); // Загружаем файл
+                await loadTextContent(`texts/day${currentDayNum}_story.html`); // Читаем HTML файл
                 
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать сказку";
@@ -348,6 +207,7 @@
             // 3. ПЕСНЯ
             } else if (type === 'song') {
                 titleLabel.innerText = "🎵 Песенка";
+                // Показываем картинку дня
                 mainImage.src = `images/day${currentDayNum}.jpg`;
                 mainImage.style.display = 'block';
                 
@@ -376,10 +236,13 @@
                 scrollBtn.classList.add('visible');
             }
             
+            // Если есть аудио, подгружаем его
             if (audioBox.style.display === 'block') audioPlayer.load();
         }
 
-        // ФУНКЦИЯ ЗАГРУЗКИ ТЕКСТА ИЗ ФАЙЛА
+        // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+
+        // Загрузка текста из файла
         async function loadTextContent(filePath) {
             const textBox = document.getElementById('text-box');
             const textDisplay = document.getElementById('text-display');
@@ -400,18 +263,21 @@
             }
         }
 
+        // Переключение экранов
         function switchView(viewId) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
             document.getElementById(viewId).classList.add('active-view');
         }
 
+        // Обработка меток [IMAGE] и [GIF]
         function formatText(text, dayNum) {
             if (!text) return "";
-            // Обработка картинок
+            // Картинки
             let html = text.replace(/\[IMAGE(\d*)\]/g, (match, p1) => {
                 const suffix = p1 ? `_${p1}` : ''; 
                 return `<img src="images/day${dayNum}${suffix}.jpg" class="book-media" onerror="this.style.display='none'">`;
             });
+            // Гифки
             html = html.replace(/\[GIF(\d*)\]/g, (match, p1) => {
                 const suffix = p1 ? `_${p1}` : '';
                 return `<img src="images/day${dayNum}${suffix}.gif" class="book-media" onerror="this.style.display='none'">`;
@@ -419,6 +285,7 @@
             return html;
         }
 
+        // Навигация
         function goBackToMenu() {
             stopScroll();
             document.getElementById('audio-player').pause();
@@ -433,6 +300,7 @@
             switchView('view-grid');
         }
 
+        // Автоскролл
         function toggleAutoScroll() {
             const container = document.getElementById('scroll-box');
             const btn = document.getElementById('scroll-btn');
@@ -459,11 +327,13 @@
             if(btn) btn.classList.remove('active');
         }
 
+        // Настройка Telegram
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand();
         tg.setHeaderColor('#fdfbf7'); 
         tg.setBackgroundColor('#fdfbf7');
         
+        // Кнопка Назад (системная)
         tg.BackButton.onClick(() => {
             if (document.getElementById('view-menu').classList.contains('active-view')) goHome();
             else if (document.getElementById('view-content').classList.contains('active-view')) goBackToMenu();
