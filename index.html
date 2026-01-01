@@ -101,6 +101,20 @@
         <button class="fab-scroll" id="scroll-btn" onclick="toggleAutoScroll()">✨</button>
     </div>
 
+    <!-- Модальное окно для ввода кода -->
+    <div id="unlock-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:var(--accent); margin-top:0;">Доступ ограничен</h3>
+            <p>В демо режиме этот день не доступен</p>
+            <p style="font-size:12px; opacity:0.7;">Введите код доступа:</p>
+            <input type="text" id="access-code-input" class="modal-input" placeholder="Код...">
+            <div style="display:flex; justify-content:center;">
+                <button class="modal-btn secondary" onclick="closeUnlockModal()">Отмена</button>
+                <button class="modal-btn" onclick="verifyCode()">Войти</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- ДАННЫЕ ---
         const items = [
@@ -118,6 +132,7 @@
 
         let currentDayNum = 1;
         let readDays = JSON.parse(localStorage.getItem('elli_progress')) || [];
+        let isFullVersion = localStorage.getItem('elli_full_version') === 'true';
         let isScrolling = false;
         let scrollInterval;
 
@@ -129,13 +144,23 @@
                 const dayNum = i + 1;
                 const card = document.createElement('div');
                 const isRead = readDays.includes(dayNum);
-                card.className = `day-card ${isRead ? 'completed' : ''}`;
+                
+                // Логика блокировки: Блокируем, если день > 3 и версия не полная
+                const isLocked = !isFullVersion && dayNum > 3;
+
+                if (isLocked) {
+                    card.className = 'day-card locked';
+                    card.onclick = () => showUnlockModal();
+                } else {
+                    card.className = `day-card ${isRead ? 'completed' : ''}`;
+                    card.onclick = () => openDayMenu(dayNum, item.n);
+                }
+
                 card.innerHTML = `
-                    <div style="font-size:9px; color: ${isRead ? '#d4af37' : '#aaa'}; font-weight:${isRead?'bold':'normal'};">ДЕНЬ ${dayNum}</div>
+                    <div style="font-size:9px; color: ${isRead && !isLocked ? '#d4af37' : '#aaa'}; font-weight:${isRead && !isLocked ?'bold':'normal'};">ДЕНЬ ${dayNum}</div>
                     <div class="day-icon">${item.i}</div>
                     <div class="day-name">${item.n}</div>
                 `;
-                card.onclick = () => openDayMenu(dayNum, item.n);
                 grid.appendChild(card);
             });
         }
@@ -325,6 +350,34 @@
             isScrolling = false;
             const btn = document.getElementById('scroll-btn');
             if(btn) btn.classList.remove('active');
+        }
+
+        // --- 4. МОДАЛЬНОЕ ОКНО И КОД ДОСТУПА ---
+        function showUnlockModal() {
+            document.getElementById('unlock-modal').classList.add('visible');
+            document.getElementById('access-code-input').value = '';
+            document.getElementById('access-code-input').focus();
+        }
+
+        function closeUnlockModal() {
+            document.getElementById('unlock-modal').classList.remove('visible');
+        }
+
+        function verifyCode() {
+            const code = document.getElementById('access-code-input').value.trim();
+            // Простейшая проверка кода (в реальном приложении лучше через сервер)
+            // Коды: "ELLIE", "LOVE", "1111"
+            const validCodes = ["ELLIE", "LOVE", "1111"];
+            
+            if (validCodes.includes(code.toUpperCase())) {
+                isFullVersion = true;
+                localStorage.setItem('elli_full_version', 'true');
+                renderGrid();
+                closeUnlockModal();
+                alert("Код принят! Все дни открыты ✨");
+            } else {
+                alert("Неверный код доступа 😔");
+            }
         }
 
         // Настройка Telegram
