@@ -278,6 +278,8 @@
                     let text = await res.text();
                     textDisplay.innerHTML = formatText(text, currentDayNum);
                     textBox.style.display = 'block';
+                    // Запускаем "умное" воспроизведение видео
+                    initVideoObserver();
                 } else {
                     textDisplay.innerHTML = "<p style='text-align:center'>Текст скоро появится...</p>";
                     textBox.style.display = 'block';
@@ -286,6 +288,24 @@
                 textDisplay.innerHTML = "<p style='text-align:center'>Ошибка загрузки текста :(</p>";
                 textBox.style.display = 'block';
             }
+        }
+
+        // Observer для автоматического воспроизведения видео при скролле
+        function initVideoObserver() {
+            const videos = document.querySelectorAll('#text-display video');
+            if (!videos.length) return;
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.play().catch(e => console.log('Autoplay blocked', e));
+                    } else {
+                        entry.target.pause();
+                    }
+                });
+            }, { threshold: 0.1 }); // Срабатывает, когда видно 10% видео
+
+            videos.forEach(video => observer.observe(video));
         }
 
         // Переключение экранов
