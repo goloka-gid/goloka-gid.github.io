@@ -16,6 +16,7 @@
     <div id="view-grid" class="view-section active-view">
         <h1>✨ Путешествие Элли</h1>
         <div class="grid" id="main-grid"></div>
+        <div class="reset-link" onclick="confirmReset()">сбросить прогресс</div>
     </div>
 
     <div id="view-menu" class="view-section">
@@ -105,12 +106,23 @@
     <div id="unlock-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="color:var(--accent); margin-top:0;">Доступ ограничен</h3>
-            <p>В демо режиме этот день не доступен</p>
-            <p style="font-size:12px; opacity:0.7;">Введите код доступа:</p>
+            <p>Чтобы открыть следующий день, введите код:</p>
             <input type="text" id="access-code-input" class="modal-input" placeholder="Код...">
             <div style="display:flex; justify-content:center;">
                 <button class="modal-btn secondary" onclick="closeUnlockModal()">Отмена</button>
                 <button class="modal-btn" onclick="verifyCode()">Войти</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно предупреждения (перескок) -->
+    <div id="warning-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:var(--accent); margin-top:0;">Не спешите!</h3>
+            <p>Нельзя перескочить, не пройдя предыдущий день.</p>
+            <div style="display:flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                <button class="modal-btn" id="warn-btn-back" onclick="closeWarningModal()">Вернуться</button>
+                <button class="modal-btn secondary" id="warn-btn-unlock" onclick="openUnlockForNext()">Открыть следующий день</button>
             </div>
         </div>
     </div>
@@ -137,6 +149,17 @@
         let isScrolling = false;
         let scrollInterval;
 
+        // --- НАСТРОЙКИ УВЕДОМЛЕНИЙ ---
+        // Если хотите получать сообщения в Телеграм при активации кода:
+        // 1. Создайте бота через @BotFather и вставьте токен ниже.
+        // 2. Узнайте свой ID через @userinfobot и вставьте ниже.
+        // ВНИМАНИЕ: Токен будет виден всем, кто откроет код страницы. Для личного проекта это ок, но будьте осторожны.
+        const NOTIFY_CONFIG = {
+            enabled: false,             // Поставьте true, чтобы включить
+            botToken: "ВАШ_ТОКЕН_БОТА", // Например: "123456:ABC-Def..."
+            chatId: "ВАШ_CHAT_ID"       // Например: "12345678"
+        };
+
         // --- 1. ОТРИСОВКА СЕТКИ ---
         function renderGrid() {
             const grid = document.getElementById('main-grid');
@@ -149,13 +172,10 @@
                 // Логика блокировки: Блокируем, если день не в списке открытых и нет полной версии
                 const isLocked = !isFullVersion && !unlockedDays.includes(dayNum);
 
-                if (isLocked) {
-                    card.className = 'day-card locked';
-                    card.onclick = () => showUnlockModal();
-                } else {
-                    card.className = `day-card ${isRead ? 'completed' : ''}`;
-                    card.onclick = () => openDayMenu(dayNum, item.n);
-                }
+                card.className = `day-card ${isLocked ? 'locked' : ''} ${isRead && !isLocked ? 'completed' : ''}`;
+                
+                // Обработчик клика с проверкой очередности
+                card.onclick = () => handleDayClick(dayNum, item.n, isLocked, isRead);
 
                 card.innerHTML = `
                     <div style="font-size:9px; color: ${isRead && !isLocked ? '#d4af37' : '#aaa'}; font-weight:${isRead && !isLocked ?'bold':'normal'};">ДЕНЬ ${dayNum}</div>
@@ -166,6 +186,27 @@
             });
         }
         renderGrid();
+
+        // Обработка клика по дню
+        function handleDayClick(dayNum, name, isLocked, isRead) {
+            const lastRead = readDays.length > 0 ? Math.max(...readDays) : 0;
+            const nextSequential = lastRead + 1;
+
+            // Если кликнули на доступный день (прочитанный или следующий по очереди)
+            // ПРИМЕЧАНИЕ: Также разрешаем открывать, если день <= 3 (первые дни бесплатные и доступные сразу)
+            if (dayNum <= nextSequential || dayNum <= 3) {
+                if (isLocked) {
+                    // Если следующий день заблокирован -> предлагаем купить
+                    showUnlockModal();
+                } else {
+                    // Если открыт -> заходим
+                    openDayMenu(dayNum, name);
+                }
+            } else {
+                // Если пытаются перескочить
+                showWarningModal(nextSequential);
+            }
+        }
 
         // --- 2. ОТКРЫТИЕ МЕНЮ ДНЯ ---
         function openDayMenu(num, name) {
@@ -378,7 +419,9 @@
             if(btn) btn.classList.remove('active');
         }
 
-        // --- 4. МОДАЛЬНОЕ ОКНО И КОД ДОСТУПА ---
+        // --- 4. МОДАЛЬНЫЕ ОКНА И ЛОГИКА ---
+        
+        // Окно разблокировки
         function showUnlockModal() {
             document.getElementById('unlock-modal').classList.add('visible');
             document.getElementById('access-code-input').value = '';
@@ -389,49 +432,120 @@
             document.getElementById('unlock-modal').classList.remove('visible');
         }
 
+        // Окно предупреждения (перескок)
+        function showWarningModal(nextDay) {
+            const modal = document.getElementById('warning-modal');
+            const unlockBtn = document.getElementById('warn-btn-unlock');
+            
+            // Проверяем, заблокирован ли "следующий правильный" день
+            const isNextLocked = !isFullVersion && !unlockedDays.includes(nextDay);
+            
+            if (isNextLocked) {
+                unlockBtn.style.display = 'block';
+                unlockBtn.innerText = `Разблокировать День ${nextDay}`;
+                unlockBtn.onclick = () => {
+                    closeWarningModal();
+                    showUnlockModal();
+                };
+            } else {
+                unlockBtn.style.display = 'block';
+                unlockBtn.innerText = `Перейти к Дню ${nextDay}`;
+                unlockBtn.onclick = () => {
+                    closeWarningModal();
+                    // Находим имя дня для открытия
+                    const item = items[nextDay - 1];
+                    openDayMenu(nextDay, item ? item.n : '');
+                };
+            }
+            
+            modal.classList.add('visible');
+        }
+
+        function closeWarningModal() {
+            document.getElementById('warning-modal').classList.remove('visible');
+        }
+
+        // Проверка кода
         async function verifyCode() {
             const code = document.getElementById('access-code-input').value.trim();
             if (!code) return;
 
             try {
-                // Загружаем коды из внешнего JSON файла
                 const response = await fetch('codes.json');
                 if (!response.ok) throw new Error('Ошибка загрузки кодов');
                 const codes = await response.json();
 
-                // Ищем точное совпадение (без учета регистра ключа, если нужно, но здесь точное)
-                // Для надежности можно проверять и так, и так, но пока точное совпадение
                 const accessValue = codes[code] || codes[code.toUpperCase()];
 
                 if (accessValue !== undefined) {
-                    // Если значение "full" - открываем всё
+                    let unlockedWhat = "";
+
+                    // 1. Полный доступ
                     if (accessValue === "full") {
                         isFullVersion = true;
                         localStorage.setItem('elli_full_version', 'true');
+                        unlockedWhat = "Полный доступ";
                         alert("Код принят! Все дни открыты ✨");
                     } 
-                    // Если значение число - открываем конкретный день
+                    // 2. Универсальный код на один день ("single")
+                    else if (accessValue === "single") {
+                        // Находим последний открытый день и добавляем +1
+                        const maxUnlocked = unlockedDays.length > 0 ? Math.max(...unlockedDays) : 3;
+                        const newDay = maxUnlocked + 1;
+                        
+                        if (!unlockedDays.includes(newDay)) {
+                            unlockedDays.push(newDay);
+                            localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
+                        }
+                        unlockedWhat = `День ${newDay}`;
+                        alert(`Код принят! ${unlockedWhat} теперь доступен ✨`);
+                    }
+                    // 3. Старый формат (конкретный номер дня) - оставим для совместимости
                     else if (typeof accessValue === 'number') {
                         if (!unlockedDays.includes(accessValue)) {
                             unlockedDays.push(accessValue);
                             localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
                         }
-                        alert(`Код принят! День ${accessValue} теперь доступен ✨`);
+                        unlockedWhat = `День ${accessValue}`;
+                        alert(`Код принят! ${unlockedWhat} теперь доступен ✨`);
                     }
 
                     renderGrid();
                     closeUnlockModal();
-                    
-                    // ПРИМЕЧАНИЕ:
-                    // Чтобы сделать код "одноразовым" (one-time use) для разных людей,
-                    // нужен БЭКЕНД (сервер), который будет помечать код как использованный в базе данных.
-                    // Текущая версия работает только в браузере клиента.
+                    sendTelegramNotification(code, unlockedWhat);
+
                 } else {
                     alert("Неверный код доступа или он уже недействителен 😔");
                 }
             } catch (e) {
                 console.error(e);
                 alert("Ошибка проверки кода. Проверьте интернет или попробуйте позже.");
+            }
+        }
+
+        // Сброс прогресса
+        function confirmReset() {
+            const isConfirmed = confirm("⚠️ Сбросить прогресс?\n\nВы попадете в демо режим, все настройки и открытые дни будут обнулены.\n\nНажмите ОК чтобы продолжить или Отмена.");
+            if (isConfirmed) {
+                localStorage.removeItem('elli_progress');
+                localStorage.removeItem('elli_full_version');
+                localStorage.removeItem('elli_unlocked_days');
+                location.reload();
+            }
+        }
+
+        // Функция отправки уведомления в Telegram
+        async function sendTelegramNotification(code, type) {
+            if (!NOTIFY_CONFIG.enabled || NOTIFY_CONFIG.botToken === "ВАШ_ТОКЕН_БОТА") return;
+
+            const message = `🔔 <b>Новая активация!</b>%0A%0A🔑 Код: <code>${code}</code>%0A🎁 Доступ: ${type}`;
+            const url = `https://api.telegram.org/bot${NOTIFY_CONFIG.botToken}/sendMessage?chat_id=${NOTIFY_CONFIG.chatId}&text=${message}&parse_mode=HTML`;
+
+            try {
+                await fetch(url);
+                console.log("Уведомление отправлено");
+            } catch (err) {
+                console.error("Ошибка отправки уведомления:", err);
             }
         }
 
