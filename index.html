@@ -132,6 +132,7 @@
 
         let currentDayNum = 1;
         let readDays = JSON.parse(localStorage.getItem('elli_progress')) || [];
+        let unlockedDays = JSON.parse(localStorage.getItem('elli_unlocked_days')) || [1, 2, 3];
         let isFullVersion = localStorage.getItem('elli_full_version') === 'true';
         let isScrolling = false;
         let scrollInterval;
@@ -145,8 +146,8 @@
                 const card = document.createElement('div');
                 const isRead = readDays.includes(dayNum);
                 
-                // Логика блокировки: Блокируем, если день > 3 и версия не полная
-                const isLocked = !isFullVersion && dayNum > 3;
+                // Логика блокировки: Блокируем, если день не в списке открытых и нет полной версии
+                const isLocked = !isFullVersion && !unlockedDays.includes(dayNum);
 
                 if (isLocked) {
                     card.className = 'day-card locked';
@@ -388,20 +389,49 @@
             document.getElementById('unlock-modal').classList.remove('visible');
         }
 
-        function verifyCode() {
+        async function verifyCode() {
             const code = document.getElementById('access-code-input').value.trim();
-            // Простейшая проверка кода (в реальном приложении лучше через сервер)
-            // Коды: "ELLIE", "LOVE", "1111"
-            const validCodes = ["ELLIE", "LOVE", "1111"];
-            
-            if (validCodes.includes(code.toUpperCase())) {
-                isFullVersion = true;
-                localStorage.setItem('elli_full_version', 'true');
-                renderGrid();
-                closeUnlockModal();
-                alert("Код принят! Все дни открыты ✨");
-            } else {
-                alert("Неверный код доступа 😔");
+            if (!code) return;
+
+            try {
+                // Загружаем коды из внешнего JSON файла
+                const response = await fetch('codes.json');
+                if (!response.ok) throw new Error('Ошибка загрузки кодов');
+                const codes = await response.json();
+
+                // Ищем точное совпадение (без учета регистра ключа, если нужно, но здесь точное)
+                // Для надежности можно проверять и так, и так, но пока точное совпадение
+                const accessValue = codes[code] || codes[code.toUpperCase()];
+
+                if (accessValue !== undefined) {
+                    // Если значение "full" - открываем всё
+                    if (accessValue === "full") {
+                        isFullVersion = true;
+                        localStorage.setItem('elli_full_version', 'true');
+                        alert("Код принят! Все дни открыты ✨");
+                    } 
+                    // Если значение число - открываем конкретный день
+                    else if (typeof accessValue === 'number') {
+                        if (!unlockedDays.includes(accessValue)) {
+                            unlockedDays.push(accessValue);
+                            localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
+                        }
+                        alert(`Код принят! День ${accessValue} теперь доступен ✨`);
+                    }
+
+                    renderGrid();
+                    closeUnlockModal();
+                    
+                    // ПРИМЕЧАНИЕ:
+                    // Чтобы сделать код "одноразовым" (one-time use) для разных людей,
+                    // нужен БЭКЕНД (сервер), который будет помечать код как использованный в базе данных.
+                    // Текущая версия работает только в браузере клиента.
+                } else {
+                    alert("Неверный код доступа или он уже недействителен 😔");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Ошибка проверки кода. Проверьте интернет или попробуйте позже.");
             }
         }
 
