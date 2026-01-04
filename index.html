@@ -103,16 +103,15 @@
         <button class="fab-scroll" id="scroll-btn" onclick="toggleAutoScroll()">✨</button>
     </div>
 
-    <!-- Модальное окно для ввода кода -->
-    <div id="unlock-modal" class="modal-overlay">
+    <!-- Модальное окно: Нет доступа -->
+    <div id="access-denied-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3 style="color:var(--accent); margin-top:0;">Доступ ограничен</h3>
-            <p>Чтобы открыть следующий день, введите код:</p>
-            <input type="text" id="access-code-input" class="modal-input" placeholder="Код...">
-            <div style="display:flex; justify-content:center;">
-                <button class="modal-btn secondary" onclick="closeUnlockModal()">Отмена</button>
-                <button class="modal-btn" onclick="verifyCode()">Войти</button>
-            </div>
+            <h3 style="color:var(--accent); margin-top:0;">Доступ закрыт 🔒</h3>
+            <p>Чтобы открыть этот день, получите доступ у бота.</p>
+            <br>
+            <button class="access-btn" onclick="openBotForAccess()">Получить доступ</button>
+            <br><br>
+            <button class="modal-btn secondary" onclick="closeAccessModal()">Закрыть</button>
         </div>
     </div>
 
@@ -123,7 +122,7 @@
             <p>Нельзя перескочить, не пройдя предыдущий день.</p>
             <div style="display:flex; flex-direction: column; gap: 10px; margin-top: 15px;">
                 <button class="modal-btn" id="warn-btn-back" onclick="closeWarningModal()">Вернуться</button>
-                <button class="modal-btn secondary" id="warn-btn-unlock" onclick="openUnlockForNext()">Открыть следующий день</button>
+                <button class="modal-btn secondary" id="warn-btn-unlock" onclick="handleLockedNextDay()">Открыть следующий день</button>
             </div>
         </div>
     </div>
@@ -145,10 +144,21 @@
 
         let currentDayNum = 1;
         let readDays = JSON.parse(localStorage.getItem('elli_progress')) || [];
+        // По умолчанию открыты 1, 2, 3 дни
         let unlockedDays = JSON.parse(localStorage.getItem('elli_unlocked_days')) || [1, 2, 3];
-        let isFullVersion = localStorage.getItem('elli_full_version') === 'true';
+        
+        // --- ТЕЛЕГРАМ ИНИЦИАЛИЗАЦИЯ ---
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+        tg.setHeaderColor('#fdfbf7'); 
+        tg.setBackgroundColor('#fdfbf7');
+
         let isScrolling = false;
         let scrollInterval;
+
+        // ПРОВЕРКА ДОСТУПА ПРИ ЗАПУСКЕ
+        // Мы делаем это "тихо", чтобы обновить права, если админ добавил пользователя в базу
+        checkUserAccess(true);
 
         // --- 1. ОТРИСОВКА СЕТКИ ---
         function renderGrid() {
@@ -158,13 +168,11 @@
                 const dayNum = i + 1;
                 const card = document.createElement('div');
                 const isRead = readDays.includes(dayNum);
-                
-                // Логика блокировки: Блокируем, если день не в списке открытых и нет полной версии
-                const isLocked = !isFullVersion && !unlockedDays.includes(dayNum);
+                const isLocked = !unlockedDays.includes(dayNum);
 
                 card.className = `day-card ${isLocked ? 'locked' : ''} ${isRead && !isLocked ? 'completed' : ''}`;
                 
-                // Обработчик клика с проверкой очередности
+                // Обработчик клика
                 card.onclick = () => handleDayClick(dayNum, item.n, isLocked, isRead);
 
                 card.innerHTML = `
@@ -182,19 +190,67 @@
             const lastRead = readDays.length > 0 ? Math.max(...readDays) : 0;
             const nextSequential = lastRead + 1;
 
-            // Если кликнули на доступный день (прочитанный или следующий по очереди)
-            // ПРИМЕЧАНИЕ: Также разрешаем открывать, если день <= 3 (первые дни бесплатные и доступные сразу)
-            if (dayNum <= nextSequential || dayNum <= 3) {
-                if (isLocked) {
-                    // Если следующий день заблокирован -> предлагаем купить
-                    showUnlockModal();
-                } else {
-                    // Если открыт -> заходим
-                    openDayMenu(dayNum, name);
-                }
+            // Разрешаем открывать если это следующий по очереди или старые дни (даже если не прочитаны, но доступны)
+            // Но также проверяем unlockedDays
+            
+            // Если пытаемся открыть день, который далеко впереди (пропуская этапы)
+            if (dayNum > nextSequential && dayNum > 3) { // 3 первых дня - исключение, они всегда доступны
+                 showWarningModal(nextSequential);
+                 return;
+            }
+
+            if (isLocked) {
+                // Если день заблокирован -> предлагаем получить доступ
+                showAccessModal();
             } else {
-                // Если пытаются перескочить
-                showWarningModal(nextSequential);
+                // Если открыт -> заходим
+                openDayMenu(dayNum, name);
+            }
+        }
+
+        // --- ЛОГИКА ПРОВЕРКИ ДОСТУПА ---
+        async function checkUserAccess(silent = false) {
+            const user = tg.initDataUnsafe?.user;
+            if (!user) {
+                if (!silent) alert("Ошибка: Не удалось получить ID пользователя Telegram.");
+                return;
+            }
+
+            try {
+                // Загружаем базу пользователей (users.json)
+                const response = await fetch(`users.json?t=${new Date().getTime()}`);
+                if (!response.ok) throw new Error("Database not found");
+                
+                const db = await response.json();
+                const userId = String(user.id);
+
+                // Проверяем есть ли пользователь в базе и какой у него уровень доступа
+                if (db[userId]) {
+                    const maxLevel = db[userId];
+                    let updated = false;
+
+                    // Если у пользователя уровень 5, значит открываем дни с 1 по 5
+                    for (let i = 1; i <= maxLevel; i++) {
+                        if (!unlockedDays.includes(i)) {
+                            unlockedDays.push(i);
+                            updated = true;
+                        }
+                    }
+
+                    if (updated) {
+                        localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
+                        renderGrid();
+                        if (!silent) alert("🎉 Доступ обновлен! Новые дни открыты.");
+                    } else {
+                        if (!silent) alert("Ваш доступ актуален. Новых дней пока нет.");
+                    }
+                } else {
+                    if (!silent) alert("Ваш ID пока не найден в базе. Обратитесь к боту.");
+                }
+
+            } catch (e) {
+                console.error("Ошибка проверки доступа:", e);
+                if (!silent) alert("Ошибка проверки доступа. Попробуйте позже.");
             }
         }
 
@@ -218,7 +274,6 @@
             switchView('view-content');
             stopScroll(); 
 
-            // Получаем элементы
             const container = document.getElementById('scroll-box');
             container.scrollTop = 0;
             const titleLabel = document.getElementById('header-title');
@@ -233,7 +288,6 @@
             const mainImage = document.getElementById('main-image');
             const scrollBtn = document.getElementById('scroll-btn');
 
-            // СБРОС ВСЕГО ПЕРЕД ОТКРЫТИЕМ
             videoPlayer.pause();
             audioPlayer.pause();
             videoArea.style.display = 'none';
@@ -243,74 +297,61 @@
             scrollBtn.classList.remove('visible');
             textDisplay.innerHTML = ""; 
 
-            // --- ЛОГИКА ПО ТИПАМ ---
-            
             // 1. ИСТОРИЯ
             if (type === 'story') {
                 titleLabel.innerText = "📖 История";
-                await loadTextContent(`texts/day${currentDayNum}_story.html`); // Читаем HTML файл
-                
+                await loadTextContent(`texts/day${currentDayNum}_story.html`); 
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать сказку";
                 audioPlayer.src = `audio/day${currentDayNum}_story.mp3`;
                 scrollBtn.classList.add('visible');
-
+            } 
             // 2. ВИДЕО
-            } else if (type === 'video') {
+            else if (type === 'video') {
                 titleLabel.innerText = "🎬 Видео";
                 videoArea.style.display = 'block';
                 videoPlayer.src = `videos/day${currentDayNum}.mp4`;
-
+            } 
             // 3. ПЕСНЯ
-            } else if (type === 'song') {
+            else if (type === 'song') {
                 titleLabel.innerText = "🎵 Песенка";
-                // Показываем картинку дня
                 mainImage.src = `images/day${currentDayNum}.jpg`;
                 mainImage.style.display = 'block';
-                
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать песенку";
                 audioPlayer.src = `audio/day${currentDayNum}_song.mp3`;
-
+            } 
             // 4. ДЕТИ
-            } else if (type === 'child') {
+            else if (type === 'child') {
                 titleLabel.innerText = "👶 Практика (Дети)";
                 await loadTextContent(`texts/day${currentDayNum}_child.html`);
-                
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать практику";
                 audioPlayer.src = `audio/day${currentDayNum}_child.mp3`;
                 scrollBtn.classList.add('visible');
-
+            } 
             // 5. ВЗРОСЛЫЕ
-            } else if (type === 'adult') {
+            else if (type === 'adult') {
                 titleLabel.innerText = "🧘‍♀️ Практика (Взр)";
                 await loadTextContent(`texts/day${currentDayNum}_adult.html`);
-                
                 audioBox.style.display = 'block';
                 audioTitle.innerText = "🎧 Слушать практику";
                 audioPlayer.src = `audio/day${currentDayNum}_adult.mp3`;
                 scrollBtn.classList.add('visible');
             }
             
-            // Если есть аудио, подгружаем его
             if (audioBox.style.display === 'block') audioPlayer.load();
         }
 
-        // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
-
-        // Загрузка текста из файла
         async function loadTextContent(filePath) {
             const textBox = document.getElementById('text-box');
             const textDisplay = document.getElementById('text-display');
-            
             try {
                 const res = await fetch(filePath);
                 if (res.ok) {
                     let text = await res.text();
                     textDisplay.innerHTML = formatText(text, currentDayNum);
                     textBox.style.display = 'block';
-                    // Запускаем "умное" воспроизведение видео
                     initVideoObserver();
                 } else {
                     textDisplay.innerHTML = "<p style='text-align:center'>Текст скоро появится...</p>";
@@ -322,11 +363,9 @@
             }
         }
 
-        // Observer для автоматического воспроизведения видео при скролле
         function initVideoObserver() {
             const videos = document.querySelectorAll('#text-display video');
             if (!videos.length) return;
-
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -335,31 +374,25 @@
                         entry.target.pause();
                     }
                 });
-            }, { threshold: 0.1 }); // Срабатывает, когда видно 10% видео
-
+            }, { threshold: 0.1 });
             videos.forEach(video => observer.observe(video));
         }
 
-        // Переключение экранов
         function switchView(viewId) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
             document.getElementById(viewId).classList.add('active-view');
         }
 
-        // Обработка меток [IMAGE] и [GIF]
         function formatText(text, dayNum) {
             if (!text) return "";
-            // Картинки
             let html = text.replace(/\[IMAGE(\d*)\]/g, (match, p1) => {
                 const suffix = p1 ? `_${p1}` : ''; 
                 return `<img src="images/day${dayNum}${suffix}.jpg" class="book-media" onerror="this.style.display='none'">`;
             });
-            // Гифки
             html = html.replace(/\[GIF(\d*)\]/g, (match, p1) => {
                 const suffix = p1 ? `_${p1}` : '';
                 return `<img src="images/day${dayNum}${suffix}.gif" class="book-media" onerror="this.style.display='none'">`;
             });
-            // Видео (как гифки)
             html = html.replace(/\[VID(\d*)\]/g, (match, p1) => {
                 const suffix = p1 ? `_${p1}` : '';
                 return `<video src="videos/day${dayNum}${suffix}.mp4" class="book-media" autoplay muted loop playsinline onerror="this.style.display='none'"></video>`;
@@ -367,7 +400,6 @@
             return html;
         }
 
-        // Навигация
         function goBackToMenu() {
             stopScroll();
             document.getElementById('audio-player').pause();
@@ -382,7 +414,6 @@
             switchView('view-grid');
         }
 
-        // Автоскролл
         function toggleAutoScroll() {
             const container = document.getElementById('scroll-box');
             const btn = document.getElementById('scroll-btn');
@@ -409,17 +440,59 @@
             if(btn) btn.classList.remove('active');
         }
 
-        // --- 4. МОДАЛЬНЫЕ ОКНА И ЛОГИКА ---
+        // --- 4. МОДАЛЬНЫЕ ОКНА И ЛОГИКА ДОСТУПА ---
         
-        // Окно разблокировки
-        function showUnlockModal() {
-            document.getElementById('unlock-modal').classList.add('visible');
-            document.getElementById('access-code-input').value = '';
-            document.getElementById('access-code-input').focus();
+        // Окно "Нет доступа"
+        function showAccessModal() {
+            // Перед показом попробуем проверить, может доступ уже дали?
+            checkUserAccess(true).then(() => {
+                // Если после проверки день всё еще закрыт, показываем окно
+                // (тут простая логика: если мы тут, значит был клик и он был locked. 
+                //  после checkUserAccess unlockedDays мог обновиться, но UI не перерисовался еще.
+                //  Поэтому лучше просто показать окно с кнопкой, которая ведет в бота)
+                document.getElementById('access-denied-modal').classList.add('visible');
+            });
         }
 
-        function closeUnlockModal() {
-            document.getElementById('unlock-modal').classList.remove('visible');
+        function closeAccessModal() {
+            document.getElementById('access-denied-modal').classList.remove('visible');
+        }
+
+        // Переход в бота и отправка уведомления админу
+        async function openBotForAccess() {
+            // 1. Отправляем уведомление админу (если включено)
+            if (APP_CONFIG.telegram && APP_CONFIG.telegram.enabled) {
+                const user = tg.initDataUnsafe?.user;
+                if (user) {
+                    await sendTelegramNotification(user);
+                }
+            }
+
+            // 2. Открываем бота
+            if (APP_CONFIG.botUrl) {
+                tg.openTelegramLink(APP_CONFIG.botUrl);
+            } else {
+                alert("Ссылка на бота не настроена в config.js");
+            }
+            closeAccessModal();
+        }
+
+        // Функция отправки уведомления в Telegram (Админу)
+        async function sendTelegramNotification(user) {
+            const { botToken, chatId } = APP_CONFIG.telegram;
+            if (!botToken || botToken === "ВАШ_ТОКЕН_БОТА" || !chatId) return;
+
+            const username = user.username ? `@${user.username}` : 'нет юзернейма';
+            const message = `🔔 <b>Запрос доступа!</b>%0A%0A👤 Имя: ${user.first_name}%0A🏷 Юзернейм: ${username}%0A🆔 ID: <code>${user.id}</code>%0A%0A📝 <i>Скопируйте ID и добавьте в users.json</i>`;
+            
+            const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=HTML`;
+
+            try {
+                // Отправляем запрос "в никуда" (fire and forget), но можно и подождать
+                fetch(url).catch(err => console.error("Ошибка отправки уведомления:", err));
+            } catch (err) {
+                console.error("Ошибка:", err);
+            }
         }
 
         // Окно предупреждения (перескок)
@@ -427,25 +500,26 @@
             const modal = document.getElementById('warning-modal');
             const unlockBtn = document.getElementById('warn-btn-unlock');
             
-            // Проверяем, заблокирован ли "следующий правильный" день
-            const isNextLocked = !isFullVersion && !unlockedDays.includes(nextDay);
+            // Кнопка ведет к логике проверки "следующего" дня
+            // Если он закрыт -> покажем access modal
+            // Если открыт -> откроем меню
             
-            if (isNextLocked) {
-                unlockBtn.style.display = 'block';
-                unlockBtn.innerText = `Разблокировать День ${nextDay}`;
-                unlockBtn.onclick = () => {
-                    closeWarningModal();
-                    showUnlockModal();
-                };
-            } else {
-                unlockBtn.style.display = 'block';
-                unlockBtn.innerText = `Перейти к Дню ${nextDay}`;
-                unlockBtn.onclick = () => {
-                    closeWarningModal();
-                    // Находим имя дня для открытия
+            // Сохраняем номер дня, чтобы обработчик знал что делать
+            unlockBtn.onclick = () => {
+                closeWarningModal();
+                const isNextLocked = !unlockedDays.includes(nextDay);
+                if (isNextLocked) {
+                    showAccessModal();
+                } else {
                     const item = items[nextDay - 1];
                     openDayMenu(nextDay, item ? item.n : '');
-                };
+                }
+            };
+
+            if (!unlockedDays.includes(nextDay)) {
+                unlockBtn.innerText = "Открыть доступ";
+            } else {
+                unlockBtn.innerText = `Перейти к Дню ${nextDay}`;
             }
             
             modal.classList.add('visible');
@@ -454,135 +528,22 @@
         function closeWarningModal() {
             document.getElementById('warning-modal').classList.remove('visible');
         }
-
-        // Проверка кода
-        async function verifyCode() {
-            const inputElement = document.getElementById('access-code-input');
-            const code = inputElement.value.trim();
-            if (!code) return;
-
-            try {
-                // Загружаем коды из внешнего JSON файла
-                // Добавляем timestamp чтобы избежать кэширования файла браузером
-                const response = await fetch(`codes.json?t=${new Date().getTime()}`);
-                
-                if (!response.ok) {
-                    throw new Error(`Файл кодов не найден (Status: ${response.status})`);
-                }
-                
-                // Сначала получаем текст, чтобы проверить его на ошибки
-                const rawText = await response.text();
-                let codes;
-
-                try {
-                    codes = JSON.parse(rawText);
-                } catch (jsonError) {
-                    console.error("JSON Parse Error. Raw content received:", rawText);
-                    // Показываем пользователю кусок файла, чтобы он понял ошибку
-                    const snippet = rawText.substring(0, 100) + (rawText.length > 100 ? "..." : "");
-                    throw new Error(`Ошибка структуры файла codes.json: ${jsonError.message}. \nПолучено: "${snippet}"`);
-                }
-                
-                // Ищем код (учитываем разный регистр)
-                // Ключи в JSON лучше держать в верхнем регистре, но проверим оба варианта
-                let accessValue = codes[code] || codes[code.toUpperCase()];
-                
-                // Если код не найден напрямую, попробуем перебрать ключи (на случай проблем с кодировкой/пробелами)
-                if (accessValue === undefined) {
-                    const foundKey = Object.keys(codes).find(k => k.toUpperCase().trim() === code.toUpperCase());
-                    if (foundKey) accessValue = codes[foundKey];
-                }
-
-                if (accessValue !== undefined) {
-                    let unlockedWhat = "";
-
-                    // 1. Полный доступ
-                    if (accessValue === "full") {
-                        isFullVersion = true;
-                        localStorage.setItem('elli_full_version', 'true');
-                        unlockedWhat = "Полный доступ";
-                        alert("🎉 Код принят! Все дни открыты!");
-                    } 
-                    // 2. Универсальный код ("single")
-                    else if (accessValue === "single") {
-                        // Находим последний открытый день. 
-                        // Если массив пуст (что странно, но возможно), начинаем с 3 (так как 1-3 бесплатные)
-                        const maxUnlocked = unlockedDays.length > 0 ? Math.max(...unlockedDays) : 3;
-                        const newDay = maxUnlocked + 1;
-                        
-                        // Проверяем, существует ли такой день вообще в списке items
-                        if (newDay > items.length) {
-                            alert("Поздравляем! Вы уже открыли все доступные дни.");
-                            return;
-                        }
-
-                        if (!unlockedDays.includes(newDay)) {
-                            unlockedDays.push(newDay);
-                            localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
-                        }
-                        unlockedWhat = `День ${newDay}`;
-                        alert(`🎉 Код принят! Открыт День ${newDay}`);
-                    }
-                    // 3. Старый формат (число)
-                    else if (typeof accessValue === 'number') {
-                        const dayToOpen = parseInt(accessValue);
-                        if (!unlockedDays.includes(dayToOpen)) {
-                            unlockedDays.push(dayToOpen);
-                            localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
-                        }
-                        unlockedWhat = `День ${dayToOpen}`;
-                        alert(`🎉 Код принят! Открыт День ${dayToOpen}`);
-                    }
-
-                    renderGrid();
-                    closeUnlockModal();
-                    sendTelegramNotification(code, unlockedWhat);
-
-                } else {
-                    alert("⛔ Неверный код доступа. Проверьте правильность ввода.");
-                }
-            } catch (e) {
-                console.error("Critical error in verifyCode:", e);
-                alert(`⚠️ Ошибка системы: ${e.message}. Убедитесь, что файл codes.json загружен на сервер.`);
-            }
+        
+        // Вспомогательная функция для кнопки в Warning Modal
+        function handleLockedNextDay() {
+            // Эта функция назначается динамически внутри showWarningModal, 
+            // но на всякий случай оставим заглушку
         }
 
         // Сброс прогресса
         function confirmReset() {
-            const isConfirmed = confirm("⚠️ Сбросить прогресс?\n\nВы попадете в демо режим, все настройки и открытые дни будут обнулены.\n\nНажмите ОК чтобы продолжить или Отмена.");
+            const isConfirmed = confirm("⚠️ Сбросить прогресс?\n\nВы вернетесь к началу (дни 1-3).");
             if (isConfirmed) {
                 localStorage.removeItem('elli_progress');
-                localStorage.removeItem('elli_full_version');
                 localStorage.removeItem('elli_unlocked_days');
                 location.reload();
             }
         }
-
-        // Функция отправки уведомления в Telegram
-        async function sendTelegramNotification(code, type) {
-            // Берем настройки из глобального объекта APP_CONFIG (из файла config.js)
-            // Если файла нет или настройки не заданы, выходим
-            if (typeof APP_CONFIG === 'undefined' || !APP_CONFIG.telegram.enabled) return;
-            
-            const { botToken, chatId } = APP_CONFIG.telegram;
-            if (botToken === "ВАШ_ТОКЕН_БОТА" || !botToken) return;
-
-            const message = `🔔 <b>Новая активация!</b>%0A%0A🔑 Код: <code>${code}</code>%0A🎁 Доступ: ${type}`;
-            const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=HTML`;
-
-            try {
-                await fetch(url);
-                console.log("Уведомление отправлено");
-            } catch (err) {
-                console.error("Ошибка отправки уведомления:", err);
-            }
-        }
-
-        // Настройка Telegram
-        const tg = window.Telegram.WebApp;
-        tg.ready(); tg.expand();
-        tg.setHeaderColor('#fdfbf7'); 
-        tg.setBackgroundColor('#fdfbf7');
         
         // Кнопка Назад (системная)
         tg.BackButton.onClick(() => {
