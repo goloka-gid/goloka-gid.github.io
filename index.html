@@ -470,7 +470,18 @@
                     throw new Error(`Файл кодов не найден (Status: ${response.status})`);
                 }
                 
-                const codes = await response.json();
+                // Сначала получаем текст, чтобы проверить его на ошибки
+                const rawText = await response.text();
+                let codes;
+
+                try {
+                    codes = JSON.parse(rawText);
+                } catch (jsonError) {
+                    console.error("JSON Parse Error. Raw content received:", rawText);
+                    // Показываем пользователю кусок файла, чтобы он понял ошибку
+                    const snippet = rawText.substring(0, 100) + (rawText.length > 100 ? "..." : "");
+                    throw new Error(`Ошибка структуры файла codes.json: ${jsonError.message}. \nПолучено: "${snippet}"`);
+                }
                 
                 // Ищем код (учитываем разный регистр)
                 // Ключи в JSON лучше держать в верхнем регистре, но проверим оба варианта
