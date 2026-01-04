@@ -103,15 +103,29 @@
         <button class="fab-scroll" id="scroll-btn" onclick="toggleAutoScroll()">✨</button>
     </div>
 
-    <!-- Модальное окно: Нет доступа -->
+    <!-- Модальное окно: ОПЛАТА (Offer) -->
     <div id="access-denied-modal" class="modal-overlay">
-        <div class="modal-box">
+        <div class="modal-box offer-box">
             <h3 style="color:var(--accent); margin-top:0;">Доступ закрыт 🔒</h3>
-            <p>Чтобы открыть этот день, получите доступ у бота.</p>
-            <br>
-            <button class="access-btn" onclick="openBotForAccess()">Получить доступ</button>
+            
+            <div class="offer-price-row">
+                Стоимость курса (30 дней):<br>
+                <span class="offer-price-val">50 000 руб.</span>
+            </div>
+            <div class="offer-price-row">
+                Стоимость одного дня:<br>
+                <span class="price-strike">2 000 руб.</span> <span class="price-new">1 000 руб.</span>
+            </div>
+
+            <div class="discount-block">
+                <div class="discount-title">🔥 Скидка 50% действует:</div>
+                <div class="discount-timer" id="offer-timer">30:00</div>
+                <div style="font-size:10px; color:#FF4500; margin-top:2px;">для быстрых и решительных</div>
+            </div>
+
+            <button class="access-btn" onclick="openPaymentLink()">Оплатить доступ</button>
             <br><br>
-            <button class="modal-btn secondary" onclick="closeAccessModal()">Закрыть</button>
+            <button class="modal-btn secondary" onclick="closeAccessModal()">Подумать еще</button>
         </div>
     </div>
 
@@ -442,15 +456,12 @@
 
         // --- 4. МОДАЛЬНЫЕ ОКНА И ЛОГИКА ДОСТУПА ---
         
-        // Окно "Нет доступа"
+        // Окно "Нет доступа" (ОПЛАТА)
         function showAccessModal() {
             // Перед показом попробуем проверить, может доступ уже дали?
             checkUserAccess(true).then(() => {
-                // Если после проверки день всё еще закрыт, показываем окно
-                // (тут простая логика: если мы тут, значит был клик и он был locked. 
-                //  после checkUserAccess unlockedDays мог обновиться, но UI не перерисовался еще.
-                //  Поэтому лучше просто показать окно с кнопкой, которая ведет в бота)
                 document.getElementById('access-denied-modal').classList.add('visible');
+                startOfferTimer();
             });
         }
 
@@ -458,41 +469,52 @@
             document.getElementById('access-denied-modal').classList.remove('visible');
         }
 
-        // Переход в бота и отправка уведомления админу
-        async function openBotForAccess() {
-            // 1. Отправляем уведомление админу (если включено)
-            if (APP_CONFIG.telegram && APP_CONFIG.telegram.enabled) {
-                const user = tg.initDataUnsafe?.user;
-                if (user) {
-                    await sendTelegramNotification(user);
-                }
+        // Таймер спецпредложения
+        let timerInterval;
+        function startOfferTimer() {
+            const timerDisplay = document.getElementById('offer-timer');
+            // Пробуем достать время окончания из памяти
+            let endTime = localStorage.getItem('offer_end_time');
+            
+            if (!endTime) {
+                // Если нет, ставим +30 минут от текущего момента
+                endTime = new Date().getTime() + (30 * 60 * 1000);
+                localStorage.setItem('offer_end_time', endTime);
             }
 
-            // 2. Открываем бота
-            if (APP_CONFIG.botUrl) {
-                tg.openTelegramLink(APP_CONFIG.botUrl);
-            } else {
-                alert("Ссылка на бота не настроена в config.js");
-            }
-            closeAccessModal();
+            // Функция обновления
+            const update = () => {
+                const now = new Date().getTime();
+                const distance = endTime - now;
+
+                if (distance < 0) {
+                    // Время вышло (можно тут убрать скидку, но пока просто оставим 00:00)
+                    timerDisplay.innerText = "00:00";
+                    clearInterval(timerInterval);
+                    return;
+                }
+
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                timerDisplay.innerText = 
+                    (minutes < 10 ? "0" + minutes : minutes) + ":" + 
+                    (seconds < 10 ? "0" + seconds : seconds);
+            };
+
+            update(); // Сразу покажем
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(update, 1000);
         }
 
-        // Функция отправки уведомления в Telegram (Админу)
-        async function sendTelegramNotification(user) {
-            const { botToken, chatId } = APP_CONFIG.telegram;
-            if (!botToken || botToken === "ВАШ_ТОКЕН_БОТА" || !chatId) return;
-
-            const username = user.username ? `@${user.username}` : 'нет юзернейма';
-            const message = `🔔 <b>Запрос доступа!</b>%0A%0A👤 Имя: ${user.first_name}%0A🏷 Юзернейм: ${username}%0A🆔 ID: <code>${user.id}</code>%0A%0A📝 <i>Скопируйте ID и добавьте в users.json</i>`;
-            
-            const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=HTML`;
-
-            try {
-                // Отправляем запрос "в никуда" (fire and forget), но можно и подождать
-                fetch(url).catch(err => console.error("Ошибка отправки уведомления:", err));
-            } catch (err) {
-                console.error("Ошибка:", err);
+        // Переход к оплате
+        function openPaymentLink() {
+            if (APP_CONFIG.paymentUrl) {
+                tg.openTelegramLink(APP_CONFIG.paymentUrl);
+            } else {
+                alert("Ссылка на оплату не настроена в config.js");
             }
+            closeAccessModal();
         }
 
         // Окно предупреждения (перескок)
