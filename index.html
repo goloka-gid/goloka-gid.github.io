@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="style.css">
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="config.js"></script> <!-- Подключаем файл настроек -->
 </head>
 <body>
 
@@ -148,17 +149,6 @@
         let isFullVersion = localStorage.getItem('elli_full_version') === 'true';
         let isScrolling = false;
         let scrollInterval;
-
-        // --- НАСТРОЙКИ УВЕДОМЛЕНИЙ ---
-        // Если хотите получать сообщения в Телеграм при активации кода:
-        // 1. Создайте бота через @BotFather и вставьте токен ниже.
-        // 2. Узнайте свой ID через @userinfobot и вставьте ниже.
-        // ВНИМАНИЕ: Токен будет виден всем, кто откроет код страницы. Для личного проекта это ок, но будьте осторожны.
-        const NOTIFY_CONFIG = {
-            enabled: true,             // Поставьте true, чтобы включить
-            botToken: "6976526427:AAH4rW1QCgWl7i6HxaiKSUMEjG8mwK3gFHs", // Например: "123456:ABC-Def..."
-            chatId: "1760136325"       // Например: "12345678"
-        };
 
         // --- 1. ОТРИСОВКА СЕТКИ ---
         function renderGrid() {
@@ -467,15 +457,30 @@
 
         // Проверка кода
         async function verifyCode() {
-            const code = document.getElementById('access-code-input').value.trim();
+            const inputElement = document.getElementById('access-code-input');
+            const code = inputElement.value.trim();
             if (!code) return;
 
             try {
-                const response = await fetch('codes.json');
-                if (!response.ok) throw new Error('Ошибка загрузки кодов');
+                // Загружаем коды из внешнего JSON файла
+                // Добавляем timestamp чтобы избежать кэширования файла браузером
+                const response = await fetch(`codes.json?t=${new Date().getTime()}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Файл кодов не найден (Status: ${response.status})`);
+                }
+                
                 const codes = await response.json();
-
-                const accessValue = codes[code] || codes[code.toUpperCase()];
+                
+                // Ищем код (учитываем разный регистр)
+                // Ключи в JSON лучше держать в верхнем регистре, но проверим оба варианта
+                let accessValue = codes[code] || codes[code.toUpperCase()];
+                
+                // Если код не найден напрямую, попробуем перебрать ключи (на случай проблем с кодировкой/пробелами)
+                if (accessValue === undefined) {
+                    const foundKey = Object.keys(codes).find(k => k.toUpperCase().trim() === code.toUpperCase());
+                    if (foundKey) accessValue = codes[foundKey];
+                }
 
                 if (accessValue !== undefined) {
                     let unlockedWhat = "";
@@ -485,29 +490,37 @@
                         isFullVersion = true;
                         localStorage.setItem('elli_full_version', 'true');
                         unlockedWhat = "Полный доступ";
-                        alert("Код принят! Все дни открыты ✨");
+                        alert("🎉 Код принят! Все дни открыты!");
                     } 
-                    // 2. Универсальный код на один день ("single")
+                    // 2. Универсальный код ("single")
                     else if (accessValue === "single") {
-                        // Находим последний открытый день и добавляем +1
+                        // Находим последний открытый день. 
+                        // Если массив пуст (что странно, но возможно), начинаем с 3 (так как 1-3 бесплатные)
                         const maxUnlocked = unlockedDays.length > 0 ? Math.max(...unlockedDays) : 3;
                         const newDay = maxUnlocked + 1;
                         
+                        // Проверяем, существует ли такой день вообще в списке items
+                        if (newDay > items.length) {
+                            alert("Поздравляем! Вы уже открыли все доступные дни.");
+                            return;
+                        }
+
                         if (!unlockedDays.includes(newDay)) {
                             unlockedDays.push(newDay);
                             localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
                         }
                         unlockedWhat = `День ${newDay}`;
-                        alert(`Код принят! ${unlockedWhat} теперь доступен ✨`);
+                        alert(`🎉 Код принят! Открыт День ${newDay}`);
                     }
-                    // 3. Старый формат (конкретный номер дня) - оставим для совместимости
+                    // 3. Старый формат (число)
                     else if (typeof accessValue === 'number') {
-                        if (!unlockedDays.includes(accessValue)) {
-                            unlockedDays.push(accessValue);
+                        const dayToOpen = parseInt(accessValue);
+                        if (!unlockedDays.includes(dayToOpen)) {
+                            unlockedDays.push(dayToOpen);
                             localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
                         }
-                        unlockedWhat = `День ${accessValue}`;
-                        alert(`Код принят! ${unlockedWhat} теперь доступен ✨`);
+                        unlockedWhat = `День ${dayToOpen}`;
+                        alert(`🎉 Код принят! Открыт День ${dayToOpen}`);
                     }
 
                     renderGrid();
@@ -515,11 +528,11 @@
                     sendTelegramNotification(code, unlockedWhat);
 
                 } else {
-                    alert("Неверный код доступа или он уже недействителен 😔");
+                    alert("⛔ Неверный код доступа. Проверьте правильность ввода.");
                 }
             } catch (e) {
-                console.error(e);
-                alert("Ошибка проверки кода. Проверьте интернет или попробуйте позже.");
+                console.error("Critical error in verifyCode:", e);
+                alert(`⚠️ Ошибка системы: ${e.message}. Убедитесь, что файл codes.json загружен на сервер.`);
             }
         }
 
@@ -536,10 +549,15 @@
 
         // Функция отправки уведомления в Telegram
         async function sendTelegramNotification(code, type) {
-            if (!NOTIFY_CONFIG.enabled || NOTIFY_CONFIG.botToken === "ВАШ_ТОКЕН_БОТА") return;
+            // Берем настройки из глобального объекта APP_CONFIG (из файла config.js)
+            // Если файла нет или настройки не заданы, выходим
+            if (typeof APP_CONFIG === 'undefined' || !APP_CONFIG.telegram.enabled) return;
+            
+            const { botToken, chatId } = APP_CONFIG.telegram;
+            if (botToken === "ВАШ_ТОКЕН_БОТА" || !botToken) return;
 
             const message = `🔔 <b>Новая активация!</b>%0A%0A🔑 Код: <code>${code}</code>%0A🎁 Доступ: ${type}`;
-            const url = `https://api.telegram.org/bot${NOTIFY_CONFIG.botToken}/sendMessage?chat_id=${NOTIFY_CONFIG.chatId}&text=${message}&parse_mode=HTML`;
+            const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=HTML`;
 
             try {
                 await fetch(url);
@@ -569,5 +587,3 @@
     </script>
 </body>
 </html>
-
-
