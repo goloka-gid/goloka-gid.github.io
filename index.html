@@ -458,7 +458,15 @@
         
         // Окно "Нет доступа" (ОПЛАТА)
         function showAccessModal() {
-            // Перед показом попробуем проверить, может доступ уже дали?
+            // 1. Отправляем уведомление админу "Пользователь заинтересовался"
+            if (APP_CONFIG.telegram && APP_CONFIG.telegram.enabled) {
+                const user = tg.initDataUnsafe?.user;
+                if (user) {
+                    sendTelegramNotification(user, "интересуется оплатой");
+                }
+            }
+
+            // 2. Показываем окно
             checkUserAccess(true).then(() => {
                 document.getElementById('access-denied-modal').classList.add('visible');
                 startOfferTimer();
@@ -509,12 +517,35 @@
 
         // Переход к оплате
         function openPaymentLink() {
+            // Уведомляем админа, что кликнули "Оплатить"
+            if (APP_CONFIG.telegram && APP_CONFIG.telegram.enabled) {
+                const user = tg.initDataUnsafe?.user;
+                if (user) sendTelegramNotification(user, "нажал ОПЛАТИТЬ");
+            }
+
             if (APP_CONFIG.paymentUrl) {
                 tg.openTelegramLink(APP_CONFIG.paymentUrl);
             } else {
                 alert("Ссылка на оплату не настроена в config.js");
             }
             closeAccessModal();
+        }
+
+        // Функция отправки уведомления в Telegram (Админу)
+        async function sendTelegramNotification(user, action) {
+            const { botToken, chatId } = APP_CONFIG.telegram;
+            if (!botToken || botToken === "ВАШ_ТОКЕН_БОТА" || !chatId) return;
+
+            const username = user.username ? `@${user.username}` : 'нет юзернейма';
+            const message = `🔔 <b>${action}</b>%0A%0A👤 Имя: ${user.first_name}%0A🏷 Юзернейм: ${username}%0A🆔 ID: <code>${user.id}</code>`;
+            
+            const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=HTML`;
+
+            try {
+                fetch(url).catch(err => console.error("Ошибка отправки уведомления:", err));
+            } catch (err) {
+                console.error("Ошибка:", err);
+            }
         }
 
         // Окно предупреждения (перескок)
