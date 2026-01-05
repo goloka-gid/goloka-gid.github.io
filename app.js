@@ -341,19 +341,33 @@ function startOfferTimer() {
         const now = new Date().getTime();
         const distance = endTime - now;
 
+        const discountBlock = document.getElementById('discount-block');
+        const priceContainer = document.getElementById('day-price-container');
+
         if (distance < 0) {
-            // Время вышло (можно тут убрать скидку, но пока просто оставим 00:00)
-            timerDisplay.innerText = "00:00";
+            // Время вышло: скрываем скидку, ставим обычную цену
+            if (discountBlock) discountBlock.style.display = 'none';
+            if (priceContainer) priceContainer.innerHTML = '<span class="offer-price-val">2 000 руб.</span>';
+            
             clearInterval(timerInterval);
             return;
+        } else {
+            // Время есть: показываем скидку
+            if (discountBlock) discountBlock.style.display = 'block';
+            if (priceContainer && !priceContainer.innerHTML.includes('price-strike')) {
+                // Восстанавливаем HTML скидки, если он был затерт
+                priceContainer.innerHTML = '<span class="price-strike">2 000 руб.</span> <span class="price-new">1 000 руб.</span>';
+            }
         }
 
         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-        timerDisplay.innerText = 
-            (minutes < 10 ? "0" + minutes : minutes) + ":" + 
-            (seconds < 10 ? "0" + seconds : seconds);
+        if (timerDisplay) {
+            timerDisplay.innerText = 
+                (minutes < 10 ? "0" + minutes : minutes) + ":" + 
+                (seconds < 10 ? "0" + seconds : seconds);
+        }
     };
 
     update(); // Сразу покажем
