@@ -130,6 +130,27 @@
         </div>
     </div>
 
+    <!-- Модальное окно: ДЕНЬ 3 (ОТЗЫВ) -->
+    <div id="review-modal" class="modal-overlay">
+        <div class="modal-box offer-box">
+            <h3 style="color:var(--accent); margin-top:0;">День 3 за отзыв 🎁</h3>
+            
+            <p style="font-size:14px; line-height:1.4;">
+                Надеемся, вам понравились первые два дня! 
+                <br><br>
+                Чтобы открыть этот день бесплатно, напишите свои впечатления о пройденных уроках.
+            </p>
+
+            <button class="access-btn" style="background: linear-gradient(45deg, #00BFFF, #1E90FF);" onclick="openReviewLink()">✍️ Написать отзыв</button>
+            
+            <div style="margin: 15px 0 10px 0; font-size: 12px; color: #999;">— или —</div>
+
+            <button class="access-btn" onclick="openPaymentLink()">Оплатить этот день</button>
+            <br><br>
+            <button class="modal-btn secondary" onclick="closeReviewModal()">Закрыть</button>
+        </div>
+    </div>
+
     <!-- Модальное окно предупреждения (перескок) -->
     <div id="warning-modal" class="modal-overlay">
         <div class="modal-box">
