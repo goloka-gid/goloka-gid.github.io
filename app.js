@@ -2,8 +2,8 @@
 
 let currentDayNum = 1;
 let readDays = JSON.parse(localStorage.getItem('elli_progress')) || [];
-// По умолчанию открыты 1, 2, 3 дни
-let unlockedDays = JSON.parse(localStorage.getItem('elli_unlocked_days')) || [1, 2, 3];
+// По умолчанию открыты 1, 2 дни (3-й за отзыв)
+let unlockedDays = JSON.parse(localStorage.getItem('elli_unlocked_days')) || [1, 2];
 
 // --- ТЕЛЕГРАМ ИНИЦИАЛИЗАЦИЯ ---
 const tg = window.Telegram.WebApp;
@@ -60,8 +60,13 @@ function handleDayClick(dayNum, name, isLocked, isRead) {
     }
 
     if (isLocked) {
-        // Если день заблокирован -> предлагаем купить (Offer)
-        showAccessModal();
+        // Если это День 3, показываем спецпредложение "За отзыв"
+        if (dayNum === 3) {
+            showReviewModal();
+        } else {
+            // Иначе предлагаем купить (Offer)
+            showAccessModal();
+        }
     } else {
         // Если открыт -> заходим
         openDayMenu(dayNum, name);
@@ -377,10 +382,33 @@ function startOfferTimer() {
 
 // Переход к оплате
 function openPaymentLink() {
-    // Уведомляем админа, что кликнули "Оплатить"
+    // Проверяем, действует ли скидка
+    let action = "нажал ОПЛАТИТЬ";
+    const endTime = localStorage.getItem('offer_end_time');
+    
+    // Если таймер не установлен, значит скидка не активирована (пользователь еще не видел OfferModal)
+    // Но если он платит из ReviewModal, мы считаем что скидка есть, если бы он открыл OfferModal?
+    // Или мы должны запустить таймер при входе в ReviewModal?
+    // Давайте запустим таймер при входе в ReviewModal тоже, чтобы скидка начала действовать.
+    
+    if (endTime) {
+        const now = new Date().getTime();
+        if (endTime - now > 0) {
+            action = "нажал ОПЛАТИТЬ (СО СКИДКОЙ 🔥)";
+        } else {
+            action = "нажал ОПЛАТИТЬ (ПОЛНАЯ ЦЕНА)";
+        }
+    } else {
+        // Таймера нет -> значит только что зашел -> Скидка есть (по умолчанию 30 мин)
+        action = "нажал ОПЛАТИТЬ (СО СКИДКОЙ 🔥)";
+        // И запустим таймер, раз он проявил интерес
+        startOfferTimer(); 
+    }
+
+    // Уведомляем админа
     if (APP_CONFIG.telegram && APP_CONFIG.telegram.enabled) {
         const user = tg.initDataUnsafe?.user;
-        if (user) sendTelegramNotification(user, "нажал ОПЛАТИТЬ");
+        if (user) sendTelegramNotification(user, action);
     }
 
     if (APP_CONFIG.paymentUrl) {
@@ -389,6 +417,32 @@ function openPaymentLink() {
         alert("Ссылка на оплату не настроена в config.js");
     }
     closeAccessModal();
+    closeReviewModal(); // На случай если вызвано оттуда
+}
+
+// --- ФУНКЦИИ ОТЗЫВОВ (ДЕНЬ 3) ---
+
+function showReviewModal() {
+    document.getElementById('review-modal').classList.add('visible');
+}
+
+function closeReviewModal() {
+    document.getElementById('review-modal').classList.remove('visible');
+}
+
+function openReviewLink() {
+    // Уведомляем админа
+    if (APP_CONFIG.telegram && APP_CONFIG.telegram.enabled) {
+        const user = tg.initDataUnsafe?.user;
+        if (user) sendTelegramNotification(user, "пошел писать ОТЗЫВ (День 3) ✍️");
+    }
+
+    if (APP_CONFIG.reviewUrl) {
+        tg.openTelegramLink(APP_CONFIG.reviewUrl);
+    } else {
+        alert("Ссылка на отзывы не настроена в config.js");
+    }
+    closeReviewModal();
 }
 
 // Функция отправки уведомления в Telegram (Админу)
