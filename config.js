@@ -3,11 +3,14 @@
 const APP_CONFIG = {
     // Ссылка на канал оплаты
     paymentUrl: "https://t.me/donate_gid",
+    
+    // Ссылка на канал для отзывов (День 3)
+    reviewUrl: "https://t.me/ellie_magic_reviews", 
 
-    // Уведомления админу (когда пользователь нажимает на закрытый день)
+    // Уведомления админу
     telegram: {
-        enabled: true,              // true = Включить уведомления
-        botToken: "6976526427:AAGfQqO6j0XvePdgJ3YkRyVJjEriSzl5H90", // Токен бота от @BotFather
-        chatId: "1760136325"       // Ваш ID (куда присылать уведомления)
+        enabled: true,              
+        botToken: "6976526427:AAGfQqO6j0XvePdgJ3YkRyVJjEriSzl5H90", 
+        chatId: "1760136325"       
     }
 };
