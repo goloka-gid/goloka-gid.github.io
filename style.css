@@ -245,3 +245,264 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
 }
 .price-strike { text-decoration: line-through; color: #999; font-size: 12px; }
 .price-new { color: #228B22; font-weight: bold; font-size: 16px; }
+
+/* --- ФИНАЛЬНЫЙ ДЕНЬ --- */
+.final-day-card {
+    grid-column: 1 / -1; /* На всю ширину */
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: white;
+    border: 2px solid #FFF;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    margin-top: 20px;
+    padding: 20px;
+    animation: float 4s infinite ease-in-out;
+}
+.final-day-card .day-name { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+.final-day-card .day-icon { font-size: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+    /* Палитра: нежные, волшебные тона */
+    --bg-gradient: linear-gradient(135deg, #FFF5E1 0%, #E6E6FA 50%, #E0F7FA 100%);
+    --accent: #8A2BE2; /* Фиолетовый акцент */
+    --text-color: #483D8B;
+    --gold: #FFD700;
+    --glass: rgba(255, 255, 255, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.9);
+}
+
+body {
+    font-family: 'Comfortaa', cursive;
+    background: var(--bg-gradient);
+    background-attachment: fixed;
+    color: var(--text-color);
+    margin: 0; padding: 10px;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Анимации */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-3px); } 100% { transform: translateY(0px); } }
+
+/* Общие классы для экранов */
+.view-section { display: none; animation: fadeIn 0.4s ease-out; }
+.active-view { display: block; }
+
+h1, h2 { text-align: center; color: var(--accent); text-shadow: 1px 1px 0px rgba(255,255,255,0.8); }
+h1 { font-size: 24px; margin: 15px 0 20px 0; }
+h2 { font-size: 20px; }
+
+/* --- ЭКРАН 1: СЕТКА ДНЕЙ --- */
+.grid { 
+    display: grid; grid-template-columns: repeat(3, 1fr); 
+    gap: 8px; max-width: 500px; margin: 0 auto; padding-bottom: 20px; 
+}
+
+.day-card {
+    background: var(--glass);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px; padding: 10px 2px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(138, 43, 226, 0.1);
+    border: 1px solid var(--glass-border); 
+    transition: transform 0.2s; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.day-card:active { transform: scale(0.95); }
+
+/* Стиль прочитанного дня */
+.day-card.completed { background: rgba(255, 248, 220, 0.85); border-color: var(--gold); }
+.day-card.completed::after {
+    content: '⭐'; position: absolute; top: -6px; right: -6px;
+    font-size: 14px; animation: float 3s infinite ease-in-out;
+}
+
+/* Стиль заблокированного дня */
+.day-card.locked { opacity: 0.8; background: rgba(230, 230, 250, 0.5); }
+.day-card.locked::after {
+    content: '🔒'; position: absolute; top: -6px; right: -6px;
+    font-size: 14px;
+}
+
+.day-icon { font-size: 28px; margin: 4px 0; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.1)); }
+.day-name { font-size: 10px; font-weight: bold; line-height: 1.1; word-wrap: break-word; padding: 0 2px; }
+
+/* Кнопка сброса прогресса */
+.reset-link {
+    display: block; width: 100%; text-align: center;
+    margin-top: 30px; margin-bottom: 50px;
+    color: #999; font-size: 11px;
+    cursor: pointer; text-decoration: underline; opacity: 0.6;
+}
+
+/* --- ЭКРАН 2: МЕНЮ ДНЯ --- */
+.menu-container {
+    display: flex; flex-direction: column; gap: 12px;
+    max-width: 400px; margin: 5vh auto 0; padding: 20px;
+}
+
+.menu-btn {
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid white;
+    border-radius: 20px;
+    padding: 15px 20px;
+    display: flex; align-items: center; gap: 15px;
+    font-family: 'Comfortaa', cursive; font-size: 15px; color: var(--text-color);
+    box-shadow: 0 5px 15px rgba(138, 43, 226, 0.08);
+    cursor: pointer; transition: 0.2s;
+}
+.menu-btn:active { transform: scale(0.97); background: #f0ebff; }
+.menu-icon { font-size: 24px; min-width: 30px; text-align: center; }
+
+.simple-back {
+    background: none; border: none; color: var(--accent);
+    font-weight: bold; font-family: 'Comfortaa'; cursor: pointer;
+    margin-bottom: 5px; display: flex; align-items: center; gap: 5px;
+    padding: 10px;
+}
+
+/* --- ЭКРАН 3: КОНТЕНТ (ЧТЕНИЕ) --- */
+.header-fixed {
+    position: fixed; top: 0; left: 0; width: 100%; height: 70px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 15px; z-index: 1100;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.5);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.nav-btn {
+    background: transparent; border: 1px solid var(--accent);
+    border-radius: 12px; padding: 6px 12px;
+    color: var(--accent); font-size: 12px; font-weight: bold;
+    cursor: pointer; display: flex; align-items: center; gap: 5px;
+    font-family: 'Comfortaa'; transition: 0.2s;
+}
+.nav-btn:active { background: var(--accent); color: white; }
+
+.scroll-wrapper {
+    padding-top: 80px; height: 100vh; overflow-y: auto; scroll-behavior: smooth;
+    padding-bottom: 100px;
+}
+
+/* Стили текста */
+.magic-text {
+    font-family: 'Lora', serif; 
+    font-size: 18px; 
+    line-height: 1.5; /* Оптимальная высота строки */
+    color: #3a2b5d; 
+    white-space: normal; /* ВАЖНО: Убирает лишние огромные пробелы */
+}
+
+/* Настройка отступов между абзацами */
+.magic-text p { 
+    margin-bottom: 8px; /* Небольшой аккуратный отступ */
+    margin-top: 0; 
+}
+
+.section-box {
+    background: rgba(255,255,255,0.5); border-radius: 24px;
+    padding: 20px 15px; margin-bottom: 20px; border: 2px solid white;
+    box-shadow: 0 10px 30px rgba(138, 43, 226, 0.05);
+}
+
+/* Медиа (картинки, видео, аудио) */
+.book-media { width: 100%; border-radius: 16px; margin: 15px 0; border: 4px solid white; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+audio { width: 100%; border-radius: 30px; margin-top: 10px; }
+
+.video-wrapper {
+    position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+    border-radius: 20px; border: 4px solid white; background: black;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin-top: 20px;
+}
+.video-wrapper video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+/* Плавающая кнопка скролла */
+.fab-scroll {
+    position: fixed; bottom: 30px; right: 20px;
+    background: var(--accent); color: white;
+    width: 50px; height: 50px; border-radius: 50%;
+    border: none; box-shadow: 0 4px 15px rgba(138,43,226,0.4);
+    font-size: 24px; cursor: pointer; z-index: 1200;
+    display: none; align-items: center; justify-content: center;
+}
+.fab-scroll.visible { display: flex; }
+.fab-scroll.active { background: #ff6b6b; }
+
+/* Модальное окно */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5); z-index: 2000;
+    display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(5px);
+}
+.modal-overlay.visible { display: flex; animation: fadeIn 0.3s ease-out; }
+
+.modal-box {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px; padding: 25px;
+    width: 90%; max-width: 320px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    border: 2px solid white;
+}
+
+.modal-box p { margin: 10px 0; color: var(--text-color); }
+.modal-input {
+    width: 100%; padding: 10px; margin: 15px 0;
+    border: 2px solid #E6E6FA; border-radius: 12px;
+    font-family: 'Comfortaa'; font-size: 16px; text-align: center;
+    outline: none;
+}
+.modal-input:focus { border-color: var(--accent); }
+
+.modal-btn {
+    background: var(--accent); color: white;
+    border: none; border-radius: 12px;
+    padding: 10px 20px; font-family: 'Comfortaa';
+    font-size: 14px; cursor: pointer; margin: 5px;
+}
+.modal-btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+
+/* Кнопка получения доступа */
+.access-btn {
+    background: linear-gradient(45deg, #8A2BE2, #9370DB);
+    color: white; border: none;
+    border-radius: 12px; padding: 12px 25px;
+    font-family: 'Comfortaa'; font-weight: bold; font-size: 15px;
+    cursor: pointer; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+    transition: 0.2s; text-decoration: none; display: inline-block;
+}
+.access-btn:active { transform: scale(0.96); }
+
+/* --- МОДАЛЬНОЕ ОКНО ОПЛАТЫ (Offer) --- */
+.offer-box {
+    text-align: center;
+}
+.offer-price-row {
+    margin: 10px 0;
+    font-size: 14px;
+    color: var(--text-color);
+}
+.offer-price-val { font-weight: bold; }
+
+.discount-block {
+    background: #FFF5EE; 
+    border: 1px dashed #FF6B6B;
+    border-radius: 12px;
+    padding: 10px;
+    margin: 15px 0;
+}
+.discount-title {
+    color: #FF4500; font-weight: bold; font-size: 13px; margin-bottom: 5px;
+}
+.discount-timer {
+    font-size: 24px; font-weight: bold; color: #FF4500;
+    font-family: 'Courier New', monospace;
+    margin-top: 5px;
+}
+.price-strike { text-decoration: line-through; color: #999; font-size: 12px; }
+.price-new { color: #228B22; font-weight: bold; font-size: 16px; }
