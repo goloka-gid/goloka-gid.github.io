@@ -41,6 +41,23 @@ function renderGrid() {
         `;
         grid.appendChild(card);
     });
+
+    // ПРОВЕРКА ФИНАЛА
+    // Если открыты все 30 дней (1..30)
+    const all30Unlocked = items.every((_, i) => unlockedDays.includes(i + 1));
+    
+    if (all30Unlocked) {
+        const finalCard = document.createElement('div');
+        finalCard.className = 'day-card final-day-card';
+        finalCard.onclick = () => openDayMenu('final', 'ФИНАЛ');
+        
+        finalCard.innerHTML = `
+            <div style="font-size:11px; font-weight:bold; color: rgba(255,255,255,0.9);">ГРАНД ФИНАЛ</div>
+            <div class="day-icon">🏆</div>
+            <div class="day-name">Вершина Пути</div>
+        `;
+        grid.appendChild(finalCard);
+    }
 }
 // Запускаем отрисовку при загрузке
 document.addEventListener('DOMContentLoaded', renderGrid);
@@ -162,46 +179,58 @@ async function openContent(type) {
     scrollBtn.classList.remove('visible');
     textDisplay.innerHTML = ""; 
 
+    // Определяем префикс файла (если финал, то особое имя, иначе dayN)
+    const filePrefix = currentDayNum === 'final' ? 'final' : `day${currentDayNum}`;
+
     // 1. ИСТОРИЯ
     if (type === 'story') {
         titleLabel.innerText = "📖 История";
-        await loadTextContent(`texts/day${currentDayNum}_story.html`); 
+        await loadTextContent(`texts/${filePrefix}_story.html`); 
+        
+        // Для финала может не быть аудио, проверим (или просто попытаемся загрузить)
+        // Но по ТЗ были только HTML ссылки. Оставим аудио по стандарту, если есть.
         audioBox.style.display = 'block';
         audioTitle.innerText = "🎧 Слушать сказку";
-        audioPlayer.src = `audio/day${currentDayNum}_story.mp3`;
+        audioPlayer.src = `audio/${filePrefix}_story.mp3`;
         scrollBtn.classList.add('visible');
     } 
     // 2. ВИДЕО
     else if (type === 'video') {
         titleLabel.innerText = "🎬 Видео";
         videoArea.style.display = 'block';
-        videoPlayer.src = `videos/day${currentDayNum}.mp4`;
+        // Если финал видео
+        const videoName = currentDayNum === 'final' ? 'final' : `day${currentDayNum}`;
+        videoPlayer.src = `videos/${videoName}.mp4`;
     } 
     // 3. ПЕСНЯ
     else if (type === 'song') {
         titleLabel.innerText = "🎵 Песенка";
-        mainImage.src = `images/day${currentDayNum}.jpg`;
+        const imgName = currentDayNum === 'final' ? 'final' : `day${currentDayNum}`;
+        mainImage.src = `images/${imgName}.jpg`;
         mainImage.style.display = 'block';
+        
         audioBox.style.display = 'block';
         audioTitle.innerText = "🎧 Слушать песенку";
-        audioPlayer.src = `audio/day${currentDayNum}_song.mp3`;
+        audioPlayer.src = `audio/${filePrefix}_song.mp3`;
     } 
     // 4. ДЕТИ
     else if (type === 'child') {
         titleLabel.innerText = "👶 Практика (Дети)";
-        await loadTextContent(`texts/day${currentDayNum}_child.html`);
+        await loadTextContent(`texts/${filePrefix}_child.html`);
+        
         audioBox.style.display = 'block';
         audioTitle.innerText = "🎧 Слушать практику";
-        audioPlayer.src = `audio/day${currentDayNum}_child.mp3`;
+        audioPlayer.src = `audio/${filePrefix}_child.mp3`;
         scrollBtn.classList.add('visible');
     } 
     // 5. ВЗРОСЛЫЕ
     else if (type === 'adult') {
         titleLabel.innerText = "🧘‍♀️ Практика (Взр)";
-        await loadTextContent(`texts/day${currentDayNum}_adult.html`);
+        await loadTextContent(`texts/${filePrefix}_adult.html`);
+        
         audioBox.style.display = 'block';
         audioTitle.innerText = "🎧 Слушать практику";
-        audioPlayer.src = `audio/day${currentDayNum}_adult.mp3`;
+        audioPlayer.src = `audio/${filePrefix}_adult.mp3`;
         scrollBtn.classList.add('visible');
     }
     
