@@ -125,6 +125,8 @@
             </div>
 
             <button class="access-btn" onclick="openPaymentLink()">Оплатить доступ</button>
+            <br>
+            <button class="green-btn" onclick="showPaymentWarning()">Я уже оплатил</button>
             <br><br>
             <button class="modal-btn secondary" onclick="closeAccessModal()">Подумать еще</button>
         </div>
@@ -148,6 +150,30 @@
             <button class="access-btn" onclick="openPaymentLink()">Оплатить этот день</button>
             <br><br>
             <button class="modal-btn secondary" onclick="closeReviewModal()">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно: ПРЕДУПРЕЖДЕНИЕ ОБ ОПЛАТЕ -->
+    <div id="payment-warning-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:#d9534f; margin-top:0;">⚠️ Внимание!</h3>
+            <p style="font-size:13px; line-height:1.4;">
+                Если вы точно оплатили доступ, то в течение суток вам откроется доступ.
+                <br><br>
+                <b>Если вы не оплачивали, то закройте это окно, иначе вы будете заблокированы и потеряете доступ к приложению навсегда.</b>
+            </p>
+            <button class="green-btn" style="font-size:14px; padding:12px;" onclick="confirmPaymentClaim()">Я действительно оплатил</button>
+            <br><br>
+            <button class="modal-btn secondary" onclick="closePaymentWarning()">Закрыть окно</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно: БЛОКИРОВКА -->
+    <div id="blocked-modal" class="modal-overlay" style="z-index:9999;">
+        <div class="modal-box" style="border-color:red;">
+            <h3 style="color:red; margin-top:0;">🚫 ДОСТУП ЗАБЛОКИРОВАН</h3>
+            <p>Ваш аккаунт находится в черном списке.</p>
+            <p style="font-size:12px;">Если это ошибка, напишите администратору.</p>
         </div>
     </div>
 
