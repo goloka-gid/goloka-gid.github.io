@@ -14,6 +14,9 @@ tg.setBackgroundColor('#fdfbf7');
 let isScrolling = false;
 let scrollInterval;
 
+// ПРОВЕРКА ЧЕРНОГО СПИСКА
+checkBlacklist();
+
 // ПРОВЕРКА ДОСТУПА ПРИ ЗАПУСКЕ
 // Мы делаем это "тихо", чтобы обновить права, если админ добавил пользователя в базу
 checkUserAccess(true);
@@ -135,6 +138,53 @@ async function checkUserAccess(silent = false) {
         if (!silent) alert("Ошибка проверки доступа. Попробуйте позже.");
     }
 }
+
+// --- ЛОГИКА ЧЕРНОГО СПИСКА ---
+async function checkBlacklist() {
+    const user = tg.initDataUnsafe?.user;
+    if (!user) return;
+
+    try {
+        const response = await fetch(`blacklist.json?t=${new Date().getTime()}`);
+        if (!response.ok) return; // Если файла нет, значит и списка нет
+
+        const blacklist = await response.json();
+        if (blacklist.includes(String(user.id)) || blacklist.includes(user.id)) {
+            // БЛОКИРОВКА
+            document.getElementById('blocked-modal').classList.add('visible');
+            // Убираем возможность закрыть окно
+            document.getElementById('blocked-modal').onclick = (e) => e.stopPropagation();
+        }
+    } catch (e) {
+        console.error("Ошибка проверки черного списка:", e);
+    }
+}
+
+// --- ФУНКЦИИ ПОДТВЕРЖДЕНИЯ ОПЛАТЫ ---
+
+function showPaymentWarning() {
+    // Скрываем окно предложения, показываем предупреждение
+    closeAccessModal();
+    document.getElementById('payment-warning-modal').classList.add('visible');
+}
+
+function closePaymentWarning() {
+    document.getElementById('payment-warning-modal').classList.remove('visible');
+}
+
+function confirmPaymentClaim() {
+    // Уведомляем админа
+    if (APP_CONFIG.telegram && APP_CONFIG.telegram.enabled) {
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            sendTelegramNotification(user, "⚠️ УТВЕРЖДАЕТ, ЧТО ОПЛАТИЛ");
+        }
+    }
+    
+    closePaymentWarning();
+    alert("Заявка принята. Ожидайте проверки в течение 24 часов.");
+}
+
 
 // --- 2. ОТКРЫТИЕ МЕНЮ ДНЯ ---
 function openDayMenu(num, name) {
