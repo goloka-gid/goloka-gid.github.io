@@ -259,3 +259,13 @@ audio { width: 100%; border-radius: 30px; margin-top: 10px; }
 }
 .final-day-card .day-name { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
 .final-day-card .day-icon { font-size: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+
+/* Кнопка "Я уже оплатил" */
+.green-btn {
+    background: #28a745; 
+    color: white; border: none;
+    border-radius: 12px; padding: 8px 15px;
+    font-family: 'Comfortaa'; font-size: 12px;
+    cursor: pointer; margin-top: 10px;
+    box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2);
+}
