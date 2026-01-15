@@ -287,6 +287,28 @@ async function openContent(type) {
     if (audioBox.style.display === 'block') audioPlayer.load();
 }
 
+async function openInstructions() {
+    switchView('view-content');
+    stopScroll();
+
+    const container = document.getElementById('scroll-box');
+    container.scrollTop = 0;
+    const titleLabel = document.getElementById('header-title');
+    
+    // Скрываем все медиа-элементы, оставляем только текст
+    document.getElementById('video-area').style.display = 'none';
+    document.getElementById('audio-box').style.display = 'none';
+    document.getElementById('main-image').style.display = 'none';
+    document.getElementById('video-player').pause();
+    document.getElementById('audio-player').pause();
+    document.getElementById('scroll-btn').classList.remove('visible');
+
+    titleLabel.innerText = "❓ Инструкция";
+    
+    // Загружаем текст инструкции
+    await loadTextContent('texts/instructions.html');
+}
+
 async function loadTextContent(filePath) {
     const textBox = document.getElementById('text-box');
     const textDisplay = document.getElementById('text-display');
