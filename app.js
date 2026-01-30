@@ -17,10 +17,6 @@ let scrollInterval;
 // ПРОВЕРКА ЧЕРНОГО СПИСКА
 checkBlacklist();
 
-// ПРОВЕРКА ДОСТУПА ПРИ ЗАПУСКЕ
-// Мы делаем это "тихо", чтобы обновить права, если админ добавил пользователя в базу
-checkUserAccess(true);
-
 // --- 1. ОТРИСОВКА СЕТКИ ---
 function renderGrid() {
     const grid = document.getElementById('main-grid');
@@ -63,7 +59,12 @@ function renderGrid() {
     }
 }
 // Запускаем отрисовку при загрузке
-document.addEventListener('DOMContentLoaded', renderGrid);
+document.addEventListener('DOMContentLoaded', () => {
+    renderGrid();
+    // ПРОВЕРКА ДОСТУПА ПРИ ЗАПУСКЕ
+    // Мы делаем это "тихо", чтобы обновить права, если админ добавил пользователя в базу
+    checkUserAccess(true);
+});
 
 // Обработка клика по дню
 function handleDayClick(dayNum, name, isLocked, isRead) {
