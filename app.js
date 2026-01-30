@@ -74,7 +74,8 @@ function handleDayClick(dayNum, name, isLocked, isRead) {
     // Но также проверяем unlockedDays
     
     // Если пытаемся открыть день, который далеко впереди (пропуская этапы)
-    if (dayNum > nextSequential && dayNum > 3) { // 3 первых дня - исключение, они всегда доступны
+    // НО если день уже открыт (isLocked == false), то разрешаем доступ
+    if (dayNum > nextSequential && dayNum > 3 && isLocked) { // 3 первых дня - исключение, они всегда доступны
             showWarningModal(nextSequential);
             return;
     }
