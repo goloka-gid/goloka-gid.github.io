@@ -98,16 +98,19 @@ function handleDayClick(dayNum, name, isLocked, isRead) {
 async function checkUserAccess(silent = false, retryCount = 0) {
     const user = tg.initDataUnsafe?.user;
     
-    // Если пользователя нет, пробуем подождать (до 3 раз по 500мс)
+    // Если пользователя нет, пробуем подождать (до 5 раз по 1000мс = 5 секунд)
     if (!user) {
-        if (retryCount < 3) {
-            if (!silent) console.log(`Попытка получения пользователя ${retryCount + 1}...`);
-            setTimeout(() => checkUserAccess(silent, retryCount + 1), 500);
+        if (retryCount < 5) {
+            console.log(`[Access] Telegram user not ready. Retry ${retryCount + 1}/5...`);
+            setTimeout(() => checkUserAccess(silent, retryCount + 1), 1000);
             return;
         }
-        if (!silent) console.warn("Ошибка: Не удалось получить ID пользователя Telegram.");
+        console.warn("[Access] Ошибка: Не удалось получить ID пользователя Telegram после 5 попыток.");
         return;
     }
+
+    const userId = String(user.id);
+    console.log(`[Access] Проверка доступа для ID: ${userId}`);
 
     try {
         // Загружаем базу пользователей (users.json)
@@ -115,14 +118,16 @@ async function checkUserAccess(silent = false, retryCount = 0) {
         if (!response.ok) throw new Error("Database not found");
         
         const db = await response.json();
-        const userId = String(user.id);
-
-        // Проверяем есть ли пользователь в базе и какой у него уровень доступа
-        if (db[userId]) {
+        
+        // Проверяем есть ли пользователь в базе
+        // Приводим ключи базы к строкам на всякий случай
+        if (db.hasOwnProperty(userId)) {
             const maxLevel = db[userId];
+            console.log(`[Access] Нашлась запись! Уровень доступа: ${maxLevel}`);
+            
             let updated = false;
 
-            // Если у пользователя уровень 5, значит открываем дни с 1 по 5
+            // Открываем дни
             for (let i = 1; i <= maxLevel; i++) {
                 if (!unlockedDays.includes(i)) {
                     unlockedDays.push(i);
@@ -130,19 +135,20 @@ async function checkUserAccess(silent = false, retryCount = 0) {
                 }
             }
 
-            if (updated) {
-                localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
-                renderGrid();
-                if (!silent) alert("🎉 Доступ обновлен! Новые дни открыты.");
-            } else {
-                if (!silent) alert("Ваш доступ актуален. Новых дней пока нет.");
+            // ВСЕГДА сохраняем и перерисовываем, если нашли пользователя, 
+            // чтобы гарантировать синхронизацию, даже если updated=false (на всякий случай)
+            localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
+            renderGrid(); // <--- ВАЖНО: Перерисовка интерфейса
+
+            if (updated && !silent) {
+                alert(`🎉 Доступ восстановлен! Открыто дней: ${maxLevel}`);
             }
         } else {
-            if (!silent) console.log("Ваш ID пока не найден в базе.");
+            console.log(`[Access] ID ${userId} не найден в базе.`);
         }
 
     } catch (e) {
-        console.error("Ошибка проверки доступа:", e);
+        console.error("[Access] Ошибка проверки доступа:", e);
         if (!silent) alert("Ошибка проверки доступа. Попробуйте позже.");
     }
 }
