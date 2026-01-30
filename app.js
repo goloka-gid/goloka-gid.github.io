@@ -81,16 +81,6 @@ function handleDayClick(dayNum, name, isLocked, isRead) {
     }
 
     if (isLocked) {
-        // ЭКСПЕРИМЕНТ: При клике на закрытый день сначала проверяем базу
-        alert("Проверяю доступ по базе...");
-        checkUserAccess(false).then(() => {
-            // После проверки смотрим, открылся ли день
-            // Нам нужно заново проверить unlockedDays, так как они могли обновиться
-            // Но переменная isLocked локальная и старая. 
-            // Проще всего перезагрузить логику или просто уведомить.
-            // Если доступ получен, renderGrid уже обновил интерфейс.
-        });
-
         // Если это День 3, показываем спецпредложение "За отзыв"
         if (dayNum === 3) {
             showReviewModal();
@@ -124,16 +114,13 @@ async function checkUserAccess(silent = false, retryCount = 0) {
 
     try {
         // Загружаем базу пользователей (users.json)
-        // Добавляем timestamp, чтобы избежать кэширования
         const response = await fetch(`users.json?t=${new Date().getTime()}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
-        }
+        if (!response.ok) throw new Error("Database not found");
         
         const db = await response.json();
         
         // Проверяем есть ли пользователь в базе
+        // Приводим ключи базы к строкам на всякий случай
         if (db.hasOwnProperty(userId)) {
             const maxLevel = db[userId];
             console.log(`[Access] Нашлась запись! Уровень доступа: ${maxLevel}`);
@@ -148,21 +135,22 @@ async function checkUserAccess(silent = false, retryCount = 0) {
                 }
             }
 
-            // ВСЕГДА сохраняем и перерисовываем
+            // ВСЕГДА сохраняем и перерисовываем, если нашли пользователя, 
+            // чтобы гарантировать синхронизацию, даже если updated=false (на всякий случай)
             localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
-            renderGrid();
+            renderGrid(); // <--- ВАЖНО: Перерисовка интерфейса
 
             if (updated && !silent) {
                 alert(`🎉 Доступ восстановлен! Открыто дней: ${maxLevel}`);
             }
         } else {
             console.log(`[Access] ID ${userId} не найден в базе.`);
-            if (!silent) alert(`Ваш ID: ${userId} не найден в базе.`);
         }
 
     } catch (e) {
         console.error("[Access] Ошибка проверки доступа:", e);
-        if (!silent) alert("Ошибка: " + e.message + "\n" + e.stack);
+        // Не показываем алерт, чтобы не пугать пользователя, если просто нет сети
+        // if (!silent) alert("Ошибка проверки доступа. Попробуйте позже.");
     }
 }
 
