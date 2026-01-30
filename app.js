@@ -124,13 +124,16 @@ async function checkUserAccess(silent = false, retryCount = 0) {
 
     try {
         // Загружаем базу пользователей (users.json)
+        // Добавляем timestamp, чтобы избежать кэширования
         const response = await fetch(`users.json?t=${new Date().getTime()}`);
-        if (!response.ok) throw new Error("Database not found");
+        
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+        }
         
         const db = await response.json();
         
         // Проверяем есть ли пользователь в базе
-        // Приводим ключи базы к строкам на всякий случай
         if (db.hasOwnProperty(userId)) {
             const maxLevel = db[userId];
             console.log(`[Access] Нашлась запись! Уровень доступа: ${maxLevel}`);
@@ -145,21 +148,21 @@ async function checkUserAccess(silent = false, retryCount = 0) {
                 }
             }
 
-            // ВСЕГДА сохраняем и перерисовываем, если нашли пользователя, 
-            // чтобы гарантировать синхронизацию, даже если updated=false (на всякий случай)
+            // ВСЕГДА сохраняем и перерисовываем
             localStorage.setItem('elli_unlocked_days', JSON.stringify(unlockedDays));
-            renderGrid(); // <--- ВАЖНО: Перерисовка интерфейса
+            renderGrid();
 
             if (updated && !silent) {
                 alert(`🎉 Доступ восстановлен! Открыто дней: ${maxLevel}`);
             }
         } else {
             console.log(`[Access] ID ${userId} не найден в базе.`);
+            if (!silent) alert(`Ваш ID: ${userId} не найден в базе.`);
         }
 
     } catch (e) {
         console.error("[Access] Ошибка проверки доступа:", e);
-        if (!silent) alert("Ошибка проверки доступа. Попробуйте позже.");
+        if (!silent) alert("Ошибка: " + e.message + "\n" + e.stack);
     }
 }
 
