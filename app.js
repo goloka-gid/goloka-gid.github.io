@@ -96,9 +96,16 @@ function handleDayClick(dayNum, name, isLocked, isRead) {
 }
 
 // --- ЛОГИКА ПРОВЕРКИ ДОСТУПА ---
-async function checkUserAccess(silent = false) {
+async function checkUserAccess(silent = false, retryCount = 0) {
     const user = tg.initDataUnsafe?.user;
+    
+    // Если пользователя нет, пробуем подождать (до 3 раз по 500мс)
     if (!user) {
+        if (retryCount < 3) {
+            if (!silent) console.log(`Попытка получения пользователя ${retryCount + 1}...`);
+            setTimeout(() => checkUserAccess(silent, retryCount + 1), 500);
+            return;
+        }
         if (!silent) console.warn("Ошибка: Не удалось получить ID пользователя Telegram.");
         return;
     }
