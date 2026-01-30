@@ -74,7 +74,8 @@ function handleDayClick(dayNum, name, isLocked, isRead) {
     // Но также проверяем unlockedDays
     
     // Если пытаемся открыть день, который далеко впереди (пропуская этапы)
-    if (dayNum > nextSequential && dayNum > 3) { // 3 первых дня - исключение, они всегда доступны
+    // НО если день уже открыт (isLocked == false), то разрешаем доступ
+    if (dayNum > nextSequential && dayNum > 3 && isLocked) { // 3 первых дня - исключение, они всегда доступны
             showWarningModal(nextSequential);
             return;
     }
@@ -94,9 +95,16 @@ function handleDayClick(dayNum, name, isLocked, isRead) {
 }
 
 // --- ЛОГИКА ПРОВЕРКИ ДОСТУПА ---
-async function checkUserAccess(silent = false) {
+async function checkUserAccess(silent = false, retryCount = 0) {
     const user = tg.initDataUnsafe?.user;
+    
+    // Если пользователя нет, пробуем подождать (до 3 раз по 500мс)
     if (!user) {
+        if (retryCount < 3) {
+            if (!silent) console.log(`Попытка получения пользователя ${retryCount + 1}...`);
+            setTimeout(() => checkUserAccess(silent, retryCount + 1), 500);
+            return;
+        }
         if (!silent) console.warn("Ошибка: Не удалось получить ID пользователя Telegram.");
         return;
     }
@@ -285,6 +293,28 @@ async function openContent(type) {
     }
     
     if (audioBox.style.display === 'block') audioPlayer.load();
+}
+
+async function openInstructions() {
+    switchView('view-content');
+    stopScroll();
+
+    const container = document.getElementById('scroll-box');
+    container.scrollTop = 0;
+    const titleLabel = document.getElementById('header-title');
+    
+    // Скрываем все медиа-элементы, оставляем только текст
+    document.getElementById('video-area').style.display = 'none';
+    document.getElementById('audio-box').style.display = 'none';
+    document.getElementById('main-image').style.display = 'none';
+    document.getElementById('video-player').pause();
+    document.getElementById('audio-player').pause();
+    document.getElementById('scroll-btn').classList.remove('visible');
+
+    titleLabel.innerText = "❓ Инструкция";
+    
+    // Загружаем текст инструкции
+    await loadTextContent('texts/instructions.html');
 }
 
 async function loadTextContent(filePath) {
