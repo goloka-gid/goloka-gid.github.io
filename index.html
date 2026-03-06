@@ -10,6 +10,22 @@
     <link rel="stylesheet" href="style.css">
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+ <!-- PWA Settings -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8A2BE2">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW зарегистрирован:', reg.scope))
+                    .catch(err => console.log('SW ошибка:', err));
+            });
+        }
+    </script>
 </head>
 <body>
 
@@ -199,3 +215,4 @@
 
 </body>
 </html>
+
