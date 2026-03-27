@@ -29,6 +29,107 @@
 </head>
 <body>
 
+    <!-- === ЭКРАН АВТОРИЗАЦИИ === -->
+<div id="auth-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; text-align: center;">
+  
+  <h2>Добро пожаловать в Мир Элли!</h2>
+  <p style="color: #666; margin-bottom: 30px;">Пожалуйста, авторизуйтесь для доступа.</p>
+
+  <!-- Кнопка Telegram -->
+  <script async src="https://telegram.org/js/telegram-widget.js?22" 
+          data-telegram-login="GolokaGidLoginBot" 
+          data-size="large" 
+          data-onauth="onTelegramAuth(user)" 
+          data-request-access="write"></script>
+
+  <!-- Разделитель -->
+  <div style="margin: 30px 0; color: #999; font-size: 14px;">ИЛИ ВВЕДИТЕ КОД ДОСТУПА:</div>
+
+  <!-- Поле для кода -->
+  <div>
+    <input type="password" id="secret-code-input" placeholder="Код (например: 1234)" style="padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; width: 200px; text-align: center;">
+    <br><br>
+    <button onclick="checkSecretCode()" style="padding: 10px 30px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Войти по коду</button>
+  </div>
+  
+  <p id="auth-error" style="color: red; margin-top: 15px; display: none;">Неверный код или нет доступа!</p>
+</div>
+
+<!-- === СКРИПТ АВТОРИЗАЦИИ === -->
+<script>
+  // ВАШ СЕКРЕТНЫЙ КОД ДЛЯ СВОИХ
+  const SECRET_PASS = "1405";
+
+  // Проверяем при загрузке страницы: может человек уже входил раньше?
+  window.onload = function() {
+    if (localStorage.getItem("isAuthorized") === "true") {
+      document.getElementById("auth-screen").style.display = "none";
+    }
+  };
+
+  // Функция: Вход по секретному коду (Вариант А)
+  function checkSecretCode() {
+    const userInput = document.getElementById("secret-code-input").value;
+    if (userInput === SECRET_PASS) {
+      // Для "своих" даем доступ сразу ко всем урокам (например, 999)
+      grantAccess(999);
+    } else {
+      showError("Неверный код доступа!");
+    }
+  }
+
+  // Функция: Вход через Telegram-кнопку
+  async function onTelegramAuth(user) {
+    console.log("Telegram User Data:", user);
+    
+    try {
+      // 1. Скачиваем ваш файл users.json с GitHub (он должен лежать рядом с index.html)
+      // Добавляем ?t=... чтобы браузер не брал старую версию файла из кэша
+      const response = await fetch('users.json?t=' + new Date().getTime());
+      
+      if (!response.ok) {
+        throw new Error("Не удалось загрузить файл базы данных");
+      }
+      
+      const usersData = await response.json(); // Превращаем файл в объект JavaScript
+      
+      // 2. Ищем ID человека (в виде строки, так как в JSON ключи всегда строки)
+      const userIdString = String(user.id);
+      
+      // 3. Проверяем, есть ли такой ключ в вашем файле
+      if (usersData.hasOwnProperty(userIdString)) {
+        // Если есть, получаем количество разрешенных уроков
+        const allowedLessons = usersData[userIdString];
+        grantAccess(allowedLessons);
+      } else {
+        // Если ID в файле нет
+        showError("Извините, у вашего Telegram ID (" + user.id + ") нет доступа к материалам.");
+      }
+      
+    } catch (error) {
+      console.error(error);
+      showError("Ошибка при проверке доступа. Попробуйте позже.");
+    }
+  }
+
+  // Функция: Разрешить доступ (прячет экран и запоминает вход)
+  function grantAccess(lessonsCount) {
+    localStorage.setItem("isAuthorized", "true"); // Запоминаем, что вошли
+    localStorage.setItem("allowedLessons", lessonsCount); // Запоминаем количество уроков
+    
+    document.getElementById("auth-screen").style.display = "none"; // Прячем заставку
+    console.log("Доступ разрешен. Уроков доступно:", lessonsCount);
+  }
+
+  // Функция: Показать ошибку (красный текст)
+  function showError(text) {
+    const errorEl = document.getElementById("auth-error");
+    errorEl.innerText = text;
+    errorEl.style.display = "block";
+  }
+</script>
+    
+
     <div id="view-grid" class="view-section active-view">
         <h1>✨ Путешествие Элли</h1>
         <div class="grid" id="main-grid"></div>
