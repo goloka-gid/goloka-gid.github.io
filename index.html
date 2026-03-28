@@ -87,7 +87,7 @@
         const allowedLessons = usersData[userIdString];
         grantAccess(allowedLessons);
       } else {
-        showError("Извините, у вашего Telegram ID (" + user.id + ") нет доступа к материалам.");
+        showError("Извините, у вас нет доступа к материалам. Если вы считаете это ошибкой, напишите администратору проекта, указав ваш Telegram ID: " + user.id);
       }
     } catch (error) {
       console.error(error);
