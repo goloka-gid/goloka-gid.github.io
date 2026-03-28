@@ -19,7 +19,7 @@ checkBlacklist();
 
 // ПРОВЕРКА ДОСТУПА ПРИ ЗАПУСКЕ
 // Мы делаем это "тихо", чтобы обновить права, если админ добавил пользователя в базу
-checkUserAccess(true);
+// checkUserAccess(true);
 
 // --- 1. ОТРИСОВКА СЕТКИ ---
 function renderGrid() {
