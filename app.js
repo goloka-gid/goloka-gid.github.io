@@ -7,9 +7,13 @@ let unlockedDays = JSON.parse(localStorage.getItem('elli_unlocked_days')) || [1,
 
 // --- ТЕЛЕГРАМ ИНИЦИАЛИЗАЦИЯ ---
 const tg = window.Telegram.WebApp;
-tg.ready(); tg.expand();
-tg.setHeaderColor('#fdfbf7'); 
-tg.setBackgroundColor('#fdfbf7');
+// Проверяем, запущен ли сайт внутри мессенджера
+if (tg && tg.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0) {
+    tg.ready(); 
+    tg.expand();
+    tg.setHeaderColor('#fdfbf7'); 
+    tg.setBackgroundColor('#fdfbf7');
+}
 
 let isScrolling = false;
 let scrollInterval;
