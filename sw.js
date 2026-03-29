@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elli-world-v3';
+const CACHE_NAME = 'elli-world-v4';
 const STATIC_ASSETS = [
     './',
     './index.html',
